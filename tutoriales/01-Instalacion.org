@@ -9,28 +9,28 @@ el 2018. Para información actualizada ver la [[http://wwww.ros.org/reps/rep-000
 plataformas oficial]].
 
 Para empezar a usar ROS no es necesario instalar Ubuntu en la
-computadora, se puede usar una maquina virtual (vm) y se cubrirá como
+computadora, se puede usar una máquina virtual (vm) y se cubrirá como
 instalar Ubuntu en una usando virtualbox. Ciertas partes
 de ROS, en particular el simulador, es muy pesado y requiere de acceso
 a hardware especializado como el GPU el cual no se encuentra
-disponible en una maquina virutal, por lo que para uso avanzado de ROS
+disponible en una máquina virutal, por lo que para uso avanzado de ROS
 y el simulador es necesario instalar ROS en la computadora física, ya
-que el simulador corre muy lento en una maquina virutal.
+que el simulador corre muy lento en una máquina virutal.
 
 En esta guía se va a explicar dos maneras de instalar Ubuntu y ROS en
-una maquina virtual. Una usando Vagrant el cual es una herramienta
-para crear maquinas virtuales automáticamente, la usaremos para crear
-una maquina que ya tiene Ubuntu y ROS instalado y esta lista para
-continuar, el otro método que se explicará es como crear la maquina
+una máquina virtual. Una usando Vagrant el cual es una herramienta
+para crear máquinas virtuales automáticamente, la usaremos para crear
+una máquina que ya tiene Ubuntu y ROS instalado y esta lista para
+continuar, el otro método que se explicará es como crear la máquina
 virtual de manera manual, instalar Ubuntu y luego instalar ROS. Las
 instrucciones de instalación de ROS y Ubuntu también son válidas fuera
-de maquinas virtuales.
+de máquinas virtuales.
 
 Si ya está usando Ubuntu puede saltar a la sección de instalación de
 ROS. de esta guía.
 
 ** Instalación de Virtualbox
-Virtualbox es un programa para crear y manejar maquinas virtuales, la
+Virtualbox es un programa para crear y manejar máquinas virtuales, la
 usaremos para correr Ubuntu sin necesidad de instalarlo en nuestras
 computadoras directamente.
 
@@ -47,7 +47,7 @@ Una vez descargado siga las instrucciones del instalador.
 
 
 ** Instalación con Vagrant
-Vagrant es una herramienta para crear maquinas virtuales de manera
+Vagrant es una herramienta para crear máquinas virtuales de manera
 automática. Con ella un archivo llamado /Vagrantfile/ que se encuentra
 en la raíz del repositorio de github de estas guías se creara una vm
 con todo lo necesario pre-instalado.
@@ -84,17 +84,84 @@ Vagrantfile, luego para abrir la consola:
 
 *** Creación de la VM
 Escriba "vagrant up" en la consola y presione enter. Luego vagrant
-bajará una maquina virtual con Ubuntu y le instalara ROS de manera
+bajará una máquina virtual con Ubuntu y le instalara ROS de manera
 automática.
 
 Una vez que haya terminado puede abrir virtualbox y seleccionar su
-nueva maquina virtual con ROS. El usuario es vagrant y la contraseña
+nueva máquina virtual con ROS. El usuario es vagrant y la contraseña
 es vagrant.
 
 Si se utiliza vagrant ya ha terminado y esta listo para aprender ROS,
 puede saltarse el resto de la guía de instalación.
-** Creación manual en maquina virtual
+** Creación manual en máquina virtual
+   Se procede a abrir VirtualBox, se va encontrar una pantalla como la siguente:
 
+#+CAPTION: Pantalla inicial de VirtualBox, el cuadro rojo indica el botón de crear una nueva VM
+#+NAME: fig:vb-first
+[[../resources/vb-image/01-vb-first-screen.png]]
+
+Proceda a selección el bóton de new, procederemos a llamar la VM
+Ros-vm y seleccionaremos de tipo Linux y de versión Ubuntu(64-bits),
+la mayoría de Computadoras recientes tienen procesadores de 64-bits,
+pero si se cuenta con una computadora vieja es posible que más bien se
+necesite Una imagen de 32-bits. Las opciones se muestran a
+continuación:
+
+#+CAPTION: Nombre y configuración de VM
+#+NAME: fig:vb-inital
+[[../resources/vb-image/02-vb-initial-settings.png]]
+
+Presione el botón de siguiente. En la siguiente pantalla se asignará
+RAM a la VM, 1024 MB (el por defecto) va a ser suficiente para
+nuestros propósitos.
+
+
+#+CAPTION: Configuración de RAM
+#+NAME: fig:vb-inital
+[[../resources/vb-image/03-vb-ram.png]]
+
+Presiones siguiente. A continuación se configurará el disco duro,
+seleccione crear una imagen virtual nueva
+
+
+#+CAPTION: Nombre y configuración de VM
+#+NAME: fig:vb-hd
+[[../resources/vb-image/04-vb-create-image.png]]
+
+Seleccione VirtualBox Disk Image VDI como el formato.
+
+#+CAPTION: Formato del disco
+#+NAME: fig:vb-hd-format
+[[../resources/vb-image/05-vb-format.png]]
+
+Luego seleccione que el espacio sea reservado dinámicamente, esta
+configuración lo que hace es que el disco de la máquina virtual solo
+toma el espacio que realmente esta utilizado. Es decir si se le dice
+que el disco de la máquina virtual es de 30 GB pero la máquina solo
+esta utilizando 3 GB, entonces solo nos va a quitar 3 GB de nuestro
+disco real. En cambio si se selecciona tamaño fijo y se selecciona 30
+GB de disco de la VM, el disco quita 30 GB en nuestro disco físico
+real, aunque la máquina virtual solo este usando 3 GB.
+
+
+#+CAPTION: Nombre y configuración de VM
+#+NAME: fig:vb-inital
+[[../resources/vb-image/06-vb-alloc.png]]
+
+Finalmente asígnele 30 GB al disco, es poco probable que usemos tanto,
+pero mejor darle un máximo alto, además si se escogió que el disco
+fuera asignado dinámicamente como se recomendó anteriormente no va a
+usar los 30 GB realmente.
+
+#+CAPTION: Nombre y configuración de VM
+#+NAME: fig:vb-inital
+[[../resources/vb-image/07-vb-disk-size.png]]
+
+Con esto la máquina virtual esta creada y lista para instalarle
+Ubuntu.
 ** Instalación de Ubuntu
+Para comenzar bajaremos la versión LTS de Ubuntu (16.04 al tiempo que
+se escribió el tutorial) de la [[https://www.ubuntu.com/download/desktop][página de descargas oficial.]]
+
 
 ** Instalación de ROS en Ubuntu
