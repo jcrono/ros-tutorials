@@ -165,3 +165,39 @@ se escribió el tutorial) de la [[https://www.ubuntu.com/download/desktop][pági
 
 
 ** Instalación de ROS en Ubuntu
+Dentro de la máquina virtual seleccione el menu y abra una
+terminal. Luego ejecute los siguientes comandos en orden:
+#+BEGIN_SRC bash
+# Añadir el repositorio
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+# Agregar la llave
+sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+
+# Actualizar la base de datos de paquetes
+sudo apt-get update
+#Instalar ROS
+sudo apt-get install ros-lunar-desktop
+#+END_SRC
+
+Con esto ROS quedará instalado en el sistema, pero antes de usar ROS
+se debe inicializar rosdep:
+
+#+BEGIN_SRC bash
+sudo rosdep init
+rosdep update
+#+END_SRC
+
+y preparar el ambiente:
+#+BEGIN_SRC bash
+echo "source /opt/ros/lunar/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+#+END_SRC
+
+De momento solo se ha instalado la parte principal de ROS, existen
+multiples herramientas que se distribuyen por separado, instalaremos
+las dependencias para poder usar estas herramientas:
+#+BEGIN_SRC bash
+sudo apt-get install python-rosinstall python-rosinstall-generator python-wstool build-essential
+#+END_SRC
+
+Con esto ROS esta listo para usarse!
