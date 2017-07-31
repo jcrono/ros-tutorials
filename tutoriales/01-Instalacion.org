@@ -45,7 +45,6 @@ Página oficial de descarga:
 
 Una vez descargado siga las instrucciones del instalador.
 
-
 ** Instalación con Vagrant
 Vagrant es una herramienta para crear máquinas virtuales de manera
 automática. Con ella un archivo llamado /Vagrantfile/ que se encuentra
@@ -163,7 +162,60 @@ Ubuntu.
 Para comenzar bajaremos la versión LTS de Ubuntu (16.04 al tiempo que
 se escribió el tutorial) de la [[https://www.ubuntu.com/download/desktop][página de descargas oficial.]]
 
+Luego se inicia la máquina virtual, esta nos pide una imagén para
+bootear, seleccionemos el iso de ubuntu que se acaba de descargar.
 
+
+[[../resources/vb-image/08-vb-start-vm.png]]
+
+Luego espere a que el disco de instalación de Ubuntu arranque y se
+enseñe una pantalla como la siguiente:
+
+[[../resources/ubuntu-inst/01-install.png]]
+
+Seleccione Install Ubuntu, y el idioma inglés. Instalar Ubuntu en
+inglés es recomendado porque en caso de algún error es más fácil
+encontrar ayuda en internet si se buscan los errores en inglés.
+
+En la pantalla que sigue seleccione que desea que se instalen
+actualizaciones durante el proceso de instalación.
+
+[[../resources/ubuntu-inst/02-updates.png]]
+
+Como es una máquina virtual se usará todo el disco para hacer la
+instalación, en caso que NO se se este instalando en una máquina
+virtual es recomendable crear las particiones manualmente.
+
+[[../resources/ubuntu-inst/03-use-all-disk.png]]
+
+Luego seleccione Costa Rica como zona horaria.
+
+[[../resources/ubuntu-inst/04-timezone.png]]
+
+Configure el teclado al idioma de su preferencia, en este caso yo
+cuento con un teclado en inglés por lo que lo configurare así.
+
+[[../resources/ubuntu-inst/05-keyboard.png]]
+
+En la pantalla que sigue se van a configurar la cuenta de usuario, el
+nombre de usuario y la clave. La clave es importante que se recuerde
+porque la computadora la va a solicitar varias veces en los tutoriales
+que siguen. Como las máquinas virtuales están aisladas de nuestras
+computadoras principales es prácticamente imposible que algún daño en
+la máquina virtual afecte la computadora física, por lo que esta bien
+utilizar una clave mala pero fácil de recordar para la VM
+como 1111. Sin embargo la mayoría de casos es muy importante usar
+claves seguras, esta es una excepción no la regla.
+
+[[../resources/ubuntu-inst/06-settings.png]]
+
+Ahora se debe esperar mientras Ubuntu realiza el proceso de
+instalación, una vez concluido se nos solicitará reiniciar la VM.
+
+[[../resources/ubuntu-inst/07-restart.png]]
+
+Presione el botón "Restart Now" (Reiniciar ahora). Con esto Ubuntu esta
+instalado en la VM y listo para utilizarse.
 ** Instalación de ROS en Ubuntu
 Dentro de la máquina virtual seleccione el menu y abra una
 terminal. Luego ejecute los siguientes comandos en orden:
