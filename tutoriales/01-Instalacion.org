@@ -82,16 +82,47 @@ Vagrantfile, luego para abrir la consola:
   dentro del directorio y seleccione la opción "Abrir terminal aquí"
 
 *** Creación de la VM
-Escriba "vagrant up" en la consola y presione enter. Luego vagrant
-bajará una máquina virtual con Ubuntu y le instalara ROS de manera
-automática.
+Use el siguiente comando en en la consola:
+
+#+BEGIN_SRC bash
+vagrant up
+#+END_SRC
+
+Con ese comando, vagrant bajará una máquina virtual con Ubuntu y le
+instalara ROS de manera automática.
 
 Una vez que haya terminado puede abrir virtualbox y seleccionar su
-nueva máquina virtual con ROS. El usuario es vagrant y la contraseña
-es vagrant.
+nueva máquina virtual con ROS. El usuario es ubuntu y la contraseña es
+vagrant. Alternativamente puede correr el siguiente comando en la
+terminal:
 
-Si se utiliza vagrant ya ha terminado y esta listo para aprender ROS,
-puede saltarse el resto de la guía de instalación.
+#+BEGIN_SRC bash
+vagrant ssh
+#+END_SRC
+
+Este comando se conecta a la vm y funciona como una sesión de
+terminal. Esta sesión es suficiente para la mayoría de lo que se va a
+hacer en esta guía.
+
+Para correr la interfaz gráfica se ocupa reinicar la VM.
+
+*** Control de la VM
+
+Si se quiere apagar la maquina virtual:
+#+BEGIN_SRC bash
+vagrant halt
+#+END_SRC
+y para iniciarla otra vez:
+#+BEGIN_SRC bash
+vagrant up
+#+END_SRC
+
+finalmente cuando se termina de usar la VM para eliminarla del todo:
+#+BEGIN_SRC bash
+vagrant destroy
+#+END_SRC
+*Importante:* Si se utiliza vagrant ya ha terminado y esta listo para
+aprender ROS, puede saltarse el resto de la guía de instalación.
 ** Creación manual en máquina virtual
    Se procede a abrir VirtualBox, se va encontrar una pantalla como la siguente:
 
