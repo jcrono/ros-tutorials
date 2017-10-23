@@ -1,0 +1,417 @@
+* Linux
+  ROS funciona encima del sistema operativo GNU/Linux, por lo que esta
+  guía sirve de introducción básica a ciertas partes de este sistema
+  operativo. El objetivo de esta guía es permitir cubrir conceptos muy
+  básicos del uso de Linux y está completamente enfocada al uso de
+  ROS. Si el usuario ha utilizado Linux antes probablemente encuentre
+  que todo lo que es cubierto en esta guía ya lo conoce y puede
+  saltarla. Además, esta guía es un introducción muy corta y no
+  pretende cubrir Linux de ninguna manera extensa, el uso de Linux es
+  un tema amplio y sería imposible de cubrir sin desviar el enfoque de
+  estas guías de ROS hacia Linux.
+
+** Jerarquía del Sistema de archivos
+   Los directorios (folders) y archivos en todas las distrubiciones de
+   GNU/Linux (Ubuntu es un ejemplo de una distribución de GNU/Linux)
+   están organizados de acuerdo a [[https://es.wikipedia.org/wiki/Filesystem_Hierarchy_Standard][La jerarquía del sistema de
+   archivos]].
+
+   El sistema de archivos se organiza como un árbol. Todos los
+   archivos están contenidos dentro de un directorio llamado la /raíz/
+   generalmente se denota con un "/".
+
+   Hay muchos directorios dentro de la raíz, pero en para efectos de
+   esta guía hay 3 que son de interés:
+   - ~/home~: Esta carpeta contiene los archivos de cada usuario, por
+     ejemplo si nuestro sistema cuenta con dos usuarios llamados
+     /usuario1/ y /usuario2/ habrían dos directorios en home,
+     ~/home/usuario1/~ y ~/home/usuario2~. Estas carpetas contienen el
+     escritorio, documentos y varios archivos de configuración que son
+     únicos para cada usuario. El directorio home de usuario que se
+     esta usando se denota con "\~". Si el usuario siendo usado se
+     llama "usuario1" entonces ~\~~ es igual a ~/home/usuario1~.
+   - ~/opt/ros~: Este directorio contiene la instalación de ros.
+   - ~/etc~: Contiene los archivos de configuración del sistema, esta
+     configuración aplica independientemente de que usuario se esta
+     usando.
+
+*** PATHs
+   Como todo esta contenido desde la raíz se puede encontrar cualquier
+   archivo dando una dirección desde la ráiz. Por ejemplo
+   ~/home/usuario1/Desktop/foo.txt~ es el archivo foo que esta dentro
+   de la carpeta Desktop dentro de la carpeta usuario1 dentro de la
+   carpeta home dentro de la raíz. A esta forma de dirigirse a un
+   archivo se le llama /Absolute PATH/ o dirección absoluta en
+   español. La dirección absoluta es la dirección a donde esta
+   guardado un archivo en la jerarquía. Se le llama absoluto porque
+   solo hay 1 archivo con esa dirección en todo el sistema.
+
+   Otra forma de direccionar los archivos es con una dirección
+   relativa o /Relative PATH/. Esta es la dirección a un achivo a
+   partir del directorio actual. Por ejemplo si se encuentra en el
+   directorio ~/home/usuario1~ la dirección ~Desktop/foo.txt~ (note la
+   falta de ~/~ al principio) es igual a
+   ~/home/usuario1/Desktop/foo.txt~. Se dice que son relativos porque
+   puede haber varias carpetas ~Desktop~ con archivos ~foo.txt~ dentro
+   de ellos, y por lo tanto ~Desktop/foo.txt~ puede referirse a varios
+   archivos diferentes dependiendo del directorio donde se ejecute la
+   búsqueda.
+
+   Hay 4 símbolos especiales que se usan para denotar algunos
+   directorios:
+   - ~/~: Como se explicó anteriormente este denota la raíz el
+     directorio que contiene todos los demás directorios y archivos
+     del sistema.
+   - ~.~: Denota el directorio actual.
+   - ~..~: Denota el directorio padre por ejemplo ~/home~ es el
+     directorio padre de ~/home/usuario1~.
+   - ~\~~: denota el directorio home del usuario actual.
+
+** BASH
+   BASH es el interprete de comandos de LINUX. Este programa se
+   encarga de leer y ejecutar los comandos que son escritos a una
+   terminal o consola de texto. Para usarlo vaya al menú del sistema y
+   busque "terminal".
+
+   Saber usar la terminal es importante porque muchos de los comandos
+   de ROS solo tienen interfaces de terminal. La razón de que no hayan
+   interfaces gráficas es porque muchas veces ROS corre en robotos y
+   sistemas incrustados como un Raspberry PI los cuales ni siquiera
+   cuentan con interfaces gráficas.
+
+   # INSERTAR IMAGEN DE EJEMPLO DE UNA TERMINAL
+
+   La notación básica de los commandos es la siguente
+
+   #+BEGIN_SRC shell
+   COMANDO <-OPCIONES> ARGUMENTOS
+   #+END_SRC
+
+   Por ejemplo el comando ~ls~ muestra los contenidos del directorio
+   actual:
+
+   #+BEGIN_SRC shell :export both
+   ls
+   #+END_SRC
+
+   Las opciones tienen dos formas una larga y una corta. Las opciones
+   cortas se denotan por "-" seguido de una letra, por ejemplo la
+   opción ~-l~ en ~ls~ muestra información extra como los permisos del
+   archivo, el dueño, el tamaño, la fecha de creación entre otros:
+
+   #+BEGIN_SRC shell :export both
+   ls -l
+   #+END_SRC
+
+   otra opción para ~ls~ es ~-a~ que muestra adicionalmente los
+   archivos escondidos (los archivos escondidos empiezan con . por
+   convención en linux).
+
+   #+BEGIN_SRC shell :export both
+   ls -a
+   #+END_SRC
+
+   Se pueden dar varias opciones cortas con un solo "-" y el orden en
+   que se den no importa. Todos los comandos a continuación son
+   equivalentes y dan exactamente el mismo resultado:
+   #+BEGIN_SRC shell
+     ls -a -l
+     ls -l -a
+     ls -al
+     ls -la
+   #+END_SRC
+
+   Además de las opciones hay comandos que aceptan 1 o más
+   argumentos. Los argumentos pueden ser opcionales o obligatorios, no
+   llevan un "-" y su orden importa. El comando ~ls~ opcionalmente
+   acepta un directorio:
+   #+BEGIN_SRC shell :export both
+   ls /
+   #+END_SRC
+
+   El comando anterior muestra todos los directorios y archivos en la
+   raíz. El comando ~ls~ muestra los archivos del directorio actual si
+   no se le dice un directorio específico para mostrar.
+
+*** Como se usa un comando nuevo
+
+    Existe muchos comandos y programas de linea de comandos y cubrir
+    el uso de todos sería imposible, entonces se hace para saber como
+    usar un comando nuevo? Hay 3 fuentes usuales de documentación de
+    un comando.
+
+    La primera fuente es la ayuda. Muchos comandos vienen una ayuda de
+    como usarse, generalmente la opción larga ~--help~ muestra esa
+    ayuda, por ejemplo veamos la ayuda del comando ~ls~:
+
+#+BEGIN_SRC shell :export both
+ls --help
+#+END_SRC
+
+La siguiente fuente de ayuda usual es el manual del comando. para
+acceder al manual de un comando usamos el comando ~man <NOMBRE DEL
+COMANDO>~ por ejemplo el manual de ~ls~ se accesa de la siguente
+forma:
+
+#+BEGIN_SRC shell
+man ls
+#+END_SRC
+
+Para más información de como usar el manual se puede leer el manual
+del manual de la siguente forma:
+#+BEGIN_SRC shell
+man man
+#+END_SRC
+
+La última fuente de información usual es internet. Muchos comandos
+poseen documentación en linea y hay muchos sitios de ayuda como
+/StackOverflow/ que son útiles para poder usar comandos, realizar
+diversas tareas con ellos y hasta encontrar comando nuevos para hacer
+las tareas nuevas.
+
+*** Comandos básicos
+    Ahora que se conoce la notación básica de los comandos veremos el
+    uso de algunos comandos básicos.
+**** pwd
+     El comando ~pwd~ (print working directory) muestra la dirección
+     absoluta del el directorio actual:
+     #+BEGIN_SRC shell
+     pwd
+     #+END_SRC
+**** ls
+     El comando ~ls~ como hemos estudiado muestra los contenidos del
+     directorio actual. ~ls~ y ~pwd~ son los "ojos" cuando se utiliza
+     una terminal. ~pwd~ muestra donde estoy y ~ls~ los contenidos de
+     ese directorio, permitiendo ver en dónde se encuentra uno y que
+     hay a su alrededor.
+
+**** cd
+     el comando ~cd~ (change directory) permite cambiarse de un
+     directorio a otro. Acepta obligatoriamente un directorio al cual
+     moverse:
+#+BEGIN_SRC shell
+pwd
+cd ~
+pwd
+#+END_SRC
+
+El comando ~cd \~~ nos mueve a el directorio home de nuestro
+usuario. Las direcciones puede ser absolutas o relativas:
+#+BEGIN_SRC shell
+cd /home/crono/Desktop/
+pwd
+cd ../Documents
+pwd
+#+END_SRC
+
+Si ~pwd~ y ~ls~ son nuestros ojos cd es nuestras piernas, pues nos
+permiten movernos por el sistema de archivos.
+
+**** mkdir
+     ~mikdir~ crea una nueva carpeta, la opción -p crea todas las
+     carpetas que no existan en el la dirección que les damos:
+#+BEGIN_SRC shell
+mkdir test
+mkdir -p par/test
+#+END_SRC
+
+El primer comando crea una carpeta test, el segundo crea una carpeta
+par si no existe y dentro una carpeta test. Si no se usa la opción -p
+el segundo comando levanta un error si par no existe.
+
+**** touch
+Tiene varios usos pero uno de los principales es crear un archivo
+vacío:
+#+BEGIN_SRC shell
+touch test.txt
+#+END_SRC
+**** mv
+el comando mv (move) mueve archivos y carpetas de un directorio a
+otro:
+#+BEGIN_SRC shell
+mv test.txt par/test
+#+END_SRC
+Esto mueve el archivo test.txt del directorio actual a par/test, se le
+puede dar tantos argumentos como se quiera, moverá todo al último
+argumento:
+#+BEGIN_SRC shell
+touch test2.txt test3.txt
+mkdir dir2
+mv test2.txt test3.txt dir2 par/test
+#+END_SRC
+
+Y finalmente puede ser usado para cambiar el nombre de un archivo:
+#+BEGIN_SRC shell
+touch old.txt
+mv old.txt new.txt
+#+END_SRC
+
+**** cp
+~cp~ (copy) copia tantos archivos como se quiera a otra carpeta:
+#+BEGIN_SRC shell
+touch other.txt
+cp new.txt other.txt par/test
+#+END_SRC
+La diferencia entre ~mv~ y ~cp~ es que ~cp~ crea copias en la carpeta
+destino y deja los originales en su ubicación inicial, ~mv~ no deja los
+originales
+**** rm
+~rm~ borra archivos y carpetas, a diferencia de otros sistemas, rm
+borra permanentemente los archivos. No los envía a una papelera y otro
+sitio donde sean recuperables. Otro cuidado es que ~rm~ no pide
+confirmación, en linux se asume que el usuario sabe lo que hace y
+comandos que puedan ocasionar daño al sistema o perdida de datos se
+ejecutan sin preguntar 2 veces tal como el usuario lo indica. Es
+responsabilidad del usuario asegurarse que los comandos que va a
+ejecutar no dañen el sistema.
+
+Habiendo dicho eso, aquí hay un ejemplo de rm:
+#+BEGIN_SRC shell
+rm other.txt new.txt
+#+END_SRC
+Esto borra los dos archivos other.txt y new.txt. Si se intenta borrar
+una capreta ~rm~ levantará un error:
+#+BEGIN_SRC shell
+rm test
+#+END_SRC
+
+Para borrar directorios se necesita usar la opción ~-r~:
+#+BEGIN_SRC shell
+rm -r test par
+#+END_SRC
+
+Con esta opción ~rm~ borra las carpetas y todos sus contenidos.
+
+**** nano
+~nano~ es un editor de texto de terminal:
+#+BEGIN_SRC shell
+nano test.txt
+#+END_SRC
+Esto abre el archivo test.txt y nos permite editarlo con nano. Una vez
+que se termine de editar el archivo se puede pulsar Ctrl-x para
+salir. Nano pregunta si se desea guardar los cambios antes de salir.
+
+**** apt
+~apt~ es el manejador de paquetes de Ubuntu. A diferencia de otros
+sistemas, las distribuciones de linux llevan años distribuyendo los
+programas en /paquetes/. Estos paquetes se obtienen de repositorios
+centrales que son mantenidos por los desarrolladores de la
+distribución.
+
+Esto trae varias ventajas sobre otras maneras de distribuir software:
+
+- Todos los programas en los repositorios son compatibles con el
+  sistema operativo y entre sí.
+- Los programas en los repositorios son confiables; no van a ser
+  virus ni instalar barras de herramientas al navegador web.
+- En general no hace falta buscar en internet por programas y bajarlos
+  de páginas de dudosa procedencia. Prácticamente cualquier programa
+  que se vaya a utilizar se encuentra en estos repositorios centrales.
+
+Las computadoras guardan una base de datos con todos los paquetes
+disponibles, para actualizar la base de datos se usa el siguiente
+comando:
+#+BEGIN_SRC shell
+sudo apt update
+#+END_SRC
+Nota: Manejar los programas instalados en el sistema requiere de
+permisos de administración, por lo que se tiene que llamar a ~apt~ con
+el comando ~sudo~.
+
+Conforme los programas en el repositorio se actualicen va a hacer
+falta actualizar la base  de datos  de paquetes en la computadora
+porque sino esta deja de reflejar los paquetes en el repositorio y apt
+falla cuando se intentan otras acciones como actualizar o instalar
+paquetes nuevos.
+
+Para actualizar los programas en el sistema se usa el siguiente
+comando:
+#+BEGIN_SRC shell
+sudo apt upgrade
+#+END_SRC
+~apt~ presentará una lista de cambios en los paquetes que se va a
+realizar y le pregunta al usuario por confirmación para proceder.
+
+
+Para buscar paquetes en los repositorios se puede el siguente comando:
+#+BEGIN_SRC shell
+apt search nano
+#+END_SRC
+esto busca en la base de datos por el paquete llamado nano.
+
+Para instalar un paquete nuevo:
+#+BEGIN_SRC shell
+sudo apt install emacs
+#+END_SRC
+
+Esto instala el paquete llamado ~emacs~ (un editor de texto popular)
+en el sistema. Uno de los trabajos más importantes del manejador de
+paquetes es la resolución de dependencias. ~apt~ no solo instala ~emacs~
+sino todo paquete que ~emacs~ ocupa para funcionar. Esto le ahorra al
+usuario el trabajo de manualmente buscar e instalar todo paquete que
+ocupa para correr el programa que en realidad desea correr.
+
+Para remover paquetes:
+#+BEGIN_SRC shell
+sudo apt remove emacs
+#+END_SRC
+
+Alternativamente se puede usar:
+#+BEGIN_SRC shell
+sudo apt purge emacs
+#+END_SRC
+
+La diferencia entre remove y purge es que purge además de desinstalar
+el programa borra los archivos de configuración en el sistema y remove
+no.
+
+~apt~ es lo suficientemente inteligente para saber cuando un paquete
+se instalo como dependencia y todos los programas que ocupaban ese
+paquete fueron desinstalados. El comando:
+#+BEGIN_SRC shell
+sudo apt autoremove
+#+END_SRC
+
+Borra todos los paquetes que alguna vez fueron instalados como
+dependencia pero ya no se ocupan para nada.
+
+
+*** globs y rangos
+    A veces queremos trabajar con varios archivos con nombres
+    parecidos o con la misma extensión pero no queremos tener que
+    escribir todos los nombres de los archivos con los que queremos
+    trabajar. Para estas ocaciones bash tiene globs y rangos.
+
+    Los rangos "{inico..final}" permiten refierme a un rango de cosas,
+    por ejemplo:
+#+BEGIN_SRC shell
+touch test{1..12}.txt
+#+END_SRC
+Este comando crea 12 archivos llamados test.txt, test2.txt ... y así
+hasta test.12.txt. Los rangos se pueden usar en básicamente todos los
+comandos que se han visto y en casi cualquier comando de terminal en
+el cual se puede trabajar con grupos de cosas.
+
+El otro carácter útil que veremos en esta guía es el glob "*". El glob
+nos permite refiéranos a cualquier cosa:
+#+BEGIN_SRC shell
+rm *.txt
+#+END_SRC
+
+Este comando borra cualquier cosa que este en el directorio actual que
+termine en .txt. Los globs se puede usar al principio o al final de
+los nombres de los archivos o solos si se usa solo se refiere a
+literalmente todo:
+#+BEGIN_SRC
+rm /*
+#+END_SRC
+
+El comando anterior se traduce a borre todo lo que esta en la raíz,
+como el lector recordará en la raíz esta contendió todo el sistema,
+por lo que un comando así borra toda la instalación, programas y
+archivos en el sistema. El comando anterior no va a correr porque le
+falta permisos de administrador y la opción ~-r~ pero si se le dan se
+borraría todo en el sistema sin preguntarlo 2 veces. Este es un
+recordatorio para el usuario que debe tener cuidado de que comandos
+corre y revisar de que entiende que va a correr para evitar dañar el
+sistema.
