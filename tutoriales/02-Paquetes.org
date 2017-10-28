@@ -1,0 +1,472 @@
+* Paquetes en ROS
+
+Hay dos conceptos básicos necesarios para entender la organización del
+código en ROS:
+- *Paquete:* Los paquetes son la unidad básica de organización de
+  código en ROS. Cada paquete puede contener bibliotecas, programas
+  ejecutables, scripts y otros tipos de software.
+- *Manifiesto(~package.xml~):* Un manifiesto es una descripción de un
+  paquete (el concepto es análogo al manifiesto de carga cuando se
+  envían contenedores). En él se captura meta información del paquete
+  como la versión, el autor, la licencia, los paquetes de los cuales
+  depende y otros.
+
+** catkin
+~catkin~ es el sistema de compilación estándar de ROS. A grandes
+rasgos, se encarga de crear y manejar los paquetes de ROS.
+
+Ocupas crear un espacio de trabajo de catkin para poder crear nuestros
+propios paquetes y utilizarlos en ROS:
+#+BEGIN_SRC shell
+mkdir -p ~/catkin_ws/src
+cd ~/catkin_ws/
+catkin_make
+#+END_SRC
+
+Un espacio de trabajo de catkin es un folder donde se puede modificar,
+construir e instalar paquetes de catkin, para más información consultar
+la [[http://wiki.ros.org/catkin/workspaces][documentación oficial]].
+
+** Herramientas del sistema de archivos
+
+Como el código de ROS esta organizado y distribuido en muchos paquetes
+diferentes manipularlo con las herramientas de linea de comandos
+regulares (Para más información consultar Apéndice A Linux) se vuelve
+tedioso, por lo que ROS provee herramientas para facilitar la
+manipulación de paquetes.
+
+Todos los comandos soportan auto-completado de comandos cuando se
+presiona la tecla TAB.
+
+*** ROS PACKAGE PATH
+Las herramientas de ROS solo encuentran paquetes que se encuentren
+dentro de la variable de ambiente ROS_PACAKGE_PATH, para ver que
+contiene esta variable se puede usar:
+#+BEGIN_SRC shell
+echo $ROS_PACKAGE_PATH
+#+END_SRC
+
+La variable contiene una lista de directorios separados por dos
+puntos, por ejemplo:
+#+BEGIN_SRC shell
+    /opt/ros/kinetic/base/install/share:/opt/ros/kinetic/base/install/stacks
+#+END_SRC
+
+Para agregar directorios se puse usar los siguentes comanods:
+#+BEGIN_SRC shell
+ROS_PACKAGE_PATH=/direccion/a/una/nueva/carpeta:/otra/carpeta/:$ROS_PACKAGE_PATH >> ~/.bashrc
+. ~/.bashrc
+#+END_SRC
+
+Esto agrega 2 carpetas nuevas y lo que ya estaba en ~ROS_PACKAGE_PATH~
+y se lo reasigna a ~ROS_PACKAGE_PATH~, luego este comando se inserta
+al archivo de configuración de bash y finalmente se le indica a bash
+que vuelva a cargar su configuración, haciendo que los cambios tengan efecto
+*** rospack
+~rospack~ permite conseguir información acerca de los paquetes de
+ROS. La mayoría de sus subcomandos permite consguir partes de la meta
+información de un paquete. Para esta guía vamos a cubir 3 subcomandos:
+~list~, ~find~, y ~help~.
+
+*** list
+Uso:
+#+BEGIN_SRC shell
+rospack list
+#+END_SRC
+
+Ejemplo de una parte del resultado:
+#+BEGIN_SRC shell
+actionlib /opt/ros/lunar/share/actionlib
+actionlib_msgs /opt/ros/lunar/share/actionlib_msgs
+actionlib_tutorials /opt/ros/lunar/share/actionlib_tutorials
+angles /opt/ros/lunar/share/angles
+bond /opt/ros/lunar/share/bond
+bondcpp /opt/ros/lunar/share/bondcpp
+bondpy /opt/ros/lunar/share/bondpy
+catkin /opt/ros/lunar/share/catkin
+class_loader /opt/ros/lunar/share/class_loader
+cmake_modules /opt/ros/lunar/share/cmake_modules
+#+END_SRC
+
+Este subcomando imprime una lista a la terminal con los nombres de
+todos los paquetes instalados y su ubicación en el sistema de
+archivos.
+
+*** find
+Uso:
+#+BEGIN_SRC shell
+rospack find <NOMBRE DEL PAQUETE>
+#+END_SRC
+
+Ejemplo:
+#+BEGIN_SRC shell
+rospack find roscpp
+#+END_SRC
+Resultado:
+#+BEGIN_SRC
+/opt/ros/lunar/share/roscpp
+#+END_SRC
+
+Este subcomando encuentra la dirección absoluta al paquete de ROS que
+se busca.
+
+*** help
+#+BEGIN_SRC shell
+rospack help
+#+END_SRC
+
+Imprime la ayuda de ~rospack~ la cual muestra todo los subcomandos.
+
+*** roscd
+~roscd~ es equivalente al comando regular ~cd~, permite usar el nombre
+del paquete de ROS en lugar de usar directorios del sistema de
+archivos.
+
+Uso:
+#+BEGIN_SRC shell
+roscd <NOMBRE_DEL_PAQUETE[/subdirectorio]>
+#+END_SRC
+
+Ejemplo:
+#+BEGIN_SRC shell
+roscd roscpp
+pwd
+#+END_SRC
+
+Vemos que ~pwd~ indica ~/opt/ros/lunar/share/roscpp~, el mismo
+directorio que se obtuvo al correr ~rospack find~ en el ejemplo
+anterior.
+
+Note que ~roscd~ también puede moverse a subdirectorios de un paquete:
+#+BEGIN_SRC shell
+roscd roscpp/cmake
+pwd
+#+END_SRC
+
+Un directorio importante es ~log~, lugar donde ROS guarda sus logs, lo
+cuales son importantes para observar el funcionamiento de ROS en caso
+de algún problema.
+
+#+BEGIN_SRC shell
+roscd log
+#+END_SRC
+
+Si no se a corrido ningún programa de ROS el directorio ~log~ no
+existe por lo que el comando anterior termina en un error.
+
+*** rosls
+~rosls~ es equivalente a ~ls~, pero funciona usando nombre de paquetes
+y no directorios del sistema de archivos.
+
+Uso:
+#+BEGIN_SRC shell
+rosls <NOMBRE DEL PAQUETE>
+#+END_SRC
+
+Ejemplo:
+#+BEGIN_SRC shell
+rosls roscpp_tutorials
+#+END_SRC
+Resultado:
+#+BEGIN_SRC shell
+cmake launch package.xml srv
+#+END_SRC
+** Creación de paquetes
+Un paquete de catkin válido contiene al menos 3 requisitos:
+- Debe tener un ~package.xml~ válido, este es el manifiesto
+- Debe contener un ~CMakeLists.txt~ este es un archivo que contiene
+  instrucciones de como se compila el código para que catkin las use.
+- Solo puede haber 1 paquete por directorio, es decir no puede haber
+  más de 1 paquetes en el mismo folder, ni paquetes dentro de otros
+  paquetes.
+
+El paquete más simple posible tiene la siguente estructura
+#+BEGIN_SRC shell
+mi_paquete/
+  CMakeLists.txt
+  package.xml
+#+END_SRC
+
+Los paquetes dentro del espacio de trabajo de catkin se guardan en
+~src/~ si se hizo el espacio tal como se especifico en esta guía, este
+se vería así:
+#+BEGIN_SRC shell
+catkin_ws/               -- Espacio de trabajo
+  src/
+    CMakeLists.txt       -- Archivo CMake de alto nivel, dado por catkin
+    package_1/
+      CMakeLists.txt     -- CMakeLists.txt del package_1
+      package.xml        -- Manifiesto del package_1
+    ...
+    package_n/
+      CMakeLists.txt     -- CMakeLists.txt del package_n
+      package.xml        -- Manifiesto del package_n
+#+END_SRC
+
+Para crear un paquete de catkin se usa el comando ~catkin_create_pkg~,
+el cual se usa de la siguiente manera:
+#+BEGIN_SRC shell
+catkin_create_pkg <NOMBRE DEL NUEVO PAQUETE> [dependencia 1] [dependencia 2] ...
+#+END_SRC
+Este comando crea un ~package.xml~ y un ~CMakeLists.txt~ los cuales
+tienen información parcial dada por ~catkin_create_pkg~
+
+Creemos un nuevo paquete llamado ~tutorial_pincipiante~:
+#+BEGIN_SRC shell
+cd ~/catkin_ws/src
+catkin_create_pkg tutorial_principiante std_msgs rospy roscpp
+#+END_SRC
+
+Para que los comandos de ROS funcionen se debe incluir el espacio de
+trabajo de catkin en el ambiente de ROS, esto se puede hacer con el
+siguiente comando:
+
+#+BEGIN_SRC shell
+source ~/catkin_ws/devel/setup.bash
+#+END_SRC
+
+Ahora todos los comandos de ROS funcionan con los paquetes en el
+ambiente de catkin.
+
+*** Dependencias
+~rospack~ permite ver las dependencias de un paquete. Hay dos tipos,
+las dependencias directas que son los paquetes de los cuales depende
+directamente nuestro paquete y las dependencias indirectas, las cuales
+son las dependencias de las dependencias de nuestro paquete.
+
+Para ver las dependencias directas de nuestro paquete podemos usar el comando:
+#+BEGIN_SRC shell
+rospack depends1 tutorial_principiante
+#+END_SRC
+
+Lo cual devuelve:
+#+BEGIN_SRC
+roscpp
+rospy
+std_msgs
+#+END_SRC
+
+Las cuales son las mismas dependencias que se le dieron al comando
+~catkin_create_pkg~.
+**
+
+** Modificando el manifiesto
+El manifiesto (package.xml) se encuentra en un formato llamado
+[[https://es.wikipedia.org/wiki/Extensible_Markup_Language][XML]]. Este formato funciona a punta de etiquietas:
+#+BEGIN_SRC xml
+<etiqueta>Contenido</etiqueta>
+#+END_SRC
+Las etiquetas se encuentran entre ~<>~ (abrir etiqueta) y ~</>~
+(cerrar etiqueta) y describen al contenido, el contenido se encuentra
+entre estos marcadores.
+
+Los comentarios en XML se denotan como ~<!--Comentario-->~ y catkin
+ignora los comentarios cuando lee los manifiestos, por lo que
+cualquier contendido puede ir en el comentario y generalmente se usan
+para dar más indicaciones a lectores humanos.
+
+El manifiesto que ~catkin_create_pkg~ generó se ve así:
+#+BEGIN_SRC xml
+<?xml version="1.0"?>
+<package format="2">
+  <name>tutorial_principante</name>
+  <version>0.0.0</version>
+  <description>The tutorial_principante package</description>
+
+  <!-- One maintainer tag required, multiple allowed, one person per tag -->
+  <!-- Example:  -->
+  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
+  <maintainer email="ubuntu@todo.todo">ubuntu</maintainer>
+
+
+  <!-- One license tag required, multiple allowed, one license per tag -->
+  <!-- Commonly used license strings: -->
+  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+  <license>TODO</license>
+
+
+  <!-- Url tags are optional, but multiple are allowed, one per tag -->
+  <!-- Optional attribute type can be: website, bugtracker, or repository -->
+  <!-- Example: -->
+  <!-- <url type="website">http://wiki.ros.org/tutorial_principante</url> -->
+
+
+  <!-- Author tags are optional, multiple are allowed, one per tag -->
+  <!-- Authors do not have to be maintainers, but could be -->
+  <!-- Example: -->
+  <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
+
+
+  <!-- The *depend tags are used to specify dependencies -->
+  <!-- Dependencies can be catkin packages or system dependencies -->
+  <!-- Examples: -->
+  <!-- Use depend as a shortcut for packages that are both build and exec dependencies -->
+  <!--   <depend>roscpp</depend> -->
+  <!--   Note that this is equivalent to the following: -->
+  <!--   <build_depend>roscpp</build_depend> -->
+  <!--   <exec_depend>roscpp</exec_depend> -->
+  <!-- Use build_depend for packages you need at compile time: -->
+  <!--   <build_depend>message_generation</build_depend> -->
+  <!-- Use build_export_depend for packages you need in order to build against this package: -->
+  <!--   <build_export_depend>message_generation</build_export_depend> -->
+  <!-- Use buildtool_depend for build tool packages: -->
+  <!--   <buildtool_depend>catkin</buildtool_depend> -->
+  <!-- Use exec_depend for packages you need at runtime: -->
+  <!--   <exec_depend>message_runtime</exec_depend> -->
+  <!-- Use test_depend for packages you need only for testing: -->
+  <!--   <test_depend>gtest</test_depend> -->
+  <!-- Use doc_depend for packages you need only for building documentation: -->
+  <!--   <doc_depend>doxygen</doc_depend> -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>
+
+#+END_SRC
+
+Las siguientes etiquetas:
+#+BEGIN_SRC xml
+<?xml version="1.0"?>
+<package format="2">
+#+END_SRC
+Son información que le indican a catkin como debe leer el archivo, no
+son de interés para el usuario
+*** etiqueta de nombre y versión
+#+BEGIN_SRC xml
+  <name>tutorial_principante</name>
+  <version>0.0.0</version>
+#+END_SRC
+La etiqueta ~<name>~ denota al nombre del paquete y la ~<version>~
+denota la versión del paquete. El nombre del paquete no se debe
+cambiar y la versión se cambia conforme vaya sucediendo el desarrollo
+del paquete.
+
+*** etiqueta de descripción
+La descripción del paquete esta dentro de la etiqueta:
+#+BEGIN_SRC xml
+<description>The tutorial_principante package</description>
+#+END_SRC
+Por convención la primera oración debe ser corta y debe describir
+completamente el propósito del paquete. Si esto es difícil de hacer
+entonces puede ser que el paquete necesite ser dividido en varios
+paquetes.
+
+Cambie la descripción del paquete a algo de su agrado, por ejemplo:
+#+BEGIN_SRC xml
+<description>
+tutorial_principante un paquete para aprender de paquetes de ROS.
+</description>
+#+END_SRC
+
+*** Etiquetas del mantenedor
+#+BEGIN_SRC xml
+<maintainer email="ubuntu@todo.todo">ubuntu</maintainer>
+#+END_SRC
+La etiqueta del mantenedor tiene la información del encargo de
+mantener en funcionamiento el paquete y brinda información de quien se
+debe de contactar para hablar del paquete (por ejemplo para reportar
+pulgas). Tiene que haber al menos 1 mantenedor, y pueden haber tantos
+como se requiera.
+
+Edítela para incluir su información:
+#+BEGIN_SRC xml
+<maintainer email="mi.correo@ejemplo.com">Mi nombre</maintainer>
+#+END_SRC
+
+*** Etiqueta de licencia:
+#+BEGIN_SRC xml
+<license>TODO</license>
+#+END_SRC
+
+Esto indica bajo que licencia de software se distribuye el paquete,
+para aprender más de las licencias puede visitar el siguiente [[https://opensource.org/licenses/alphabetical][sitio
+web]].
+
+De ejemplo edite la etiqueta para usar la licencia BSD, ya que es lo
+que usa las partes principales:
+#+BEGIN_SRC xml
+<license>BSD</license>
+#+END_SRC
+
+*** Etiquetas de dependencias
+Finalmente el último tipo de etiquetas son las dependencias:
+#+BEGIN_SRC xml
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+#+END_SRC
+
+Existen varias etiquetas dependiendo de si las dependencias son para
+compilar, correr o probar el paquete. Para más información consultar
+la [[http://wiki.ros.org/catkin/package.xml#Build.2C_Run.2C_and_Test_Dependencies][documentación de dependencias en catkin]].
+
+No es necesario modificar las etiquetas de dependencias en este
+momento.
+
+*** Manifiesto final
+La versión personalizada del manifiesto (eliminando los comentarios)
+se ve así:
+#+BEGIN_SRC xml
+<?xml version="1.0"?>
+<package format="2">
+  <name>tutorial_principante</name>
+  <version>0.0.0</version>
+  <description>
+  tutorial_principante un paquete para aprender de paquetes de ROS.
+  </description>
+
+  <maintainer email="mi.correo@ejemplo.com">Mi nombre</maintainer>
+
+  <license>BSD</license>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+
+  <export>
+  </export>
+</package>
+#+END_SRC
+** Compilación de paquetes
+
+Si todo esta bien configurado para compilar y crear los paquetes
+simplemente con correr ~catkin_make~ en el espacio de trabajo de
+catkin:
+#+BEGIN_SRC shell
+cd ~/catkin_ws/
+catkin_make
+#+END_SRC
+
+Luego para instalar los paquetes se puede correr:
+#+BEGIN_SRC shell
+catkin_make install
+#+END_SRC
