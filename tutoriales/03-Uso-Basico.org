@@ -1,0 +1,340 @@
+* Uso de ROS
+En esta guía se explorará como correr un ejemplo con ROS.
+
+Algunos conceptos que recordar:
+- Nodos :: Un proceso, la unidad básica de procesamiento en ROS
+- Nodo Maestro :: Nodo especial que se encarga de comunicar nodos
+                  entre otras cosas.
+- Tópico :: Canal por el cual los nodos mandan mensajes
+- Mensaje :: Método de comunicación entre nodos.
+
+** Un ejemplo mínimo
+Ejecute cada uno de los siguientes comandos *en una terminal diferente*:
+#+BEGIN_SRC shell
+roscore
+rosrun turtlesim turtlesim_node
+rosrun turtlesim turtlesim turtle_teleop_key
+#+END_SRC
+
+Esto debería desplegar una pantalla como una tortuga robot virtual
+viviendo en un mundo 2-D como se muestra en la imagen siguiente:
+
+[[../resources/usage/turtlesim.png]]
+
+Haga click en la ventana donde ejecutó ~rosrun turtlesim turtlesim
+turtle_teleop_key~ y puede mover la tortuga usando las flechas
+direccionales en su teclado. Note que es importante darle click a la
+terminal, pues si el foco esta en cualquier otra ventana la tortuga no
+se moverá.
+
+Felicitaciones! Ahora ya a puesto a funcionar su primer sistema con
+ROS, levanto un nodo maestro, un nodo turtlesim, y otro que captura la
+información del teclado y los comunico. Por ahora no cierre el sistema
+porque interactuaremos con el durante el resto de esta guía.
+
+Ahora expliquemos lo que se hizo con más detalle.
+
+** Interactuando con el nodo maestro
+Para iniciar el nodo maestro se usa el siguiente comando:
+#+BEGIN_SRC shell
+roscore
+#+END_SRC
+
+Eso es todo, no hacen falta argumento ni necesita ser configurado.
+
+El nodo maestro debería de estar corriendo siempre mientras se usa
+ROS. Es razonable abrir una terminal y ejecutar ~roscore~ y luego
+abrir otra terminal para hacer trabajo "real". No existe muchas
+razones para cerrar el nodo maestro excepto cuando se termino de usar
+ROS, se quiere cambiar a un nuevo conjunto de archivos de logs o se
+desea limpiar el servidor de parámetros. Para cerrar el maestro
+seleccione la terminal correspondiente y presione =Ctrl-C=. Detener al
+maestro no se trae abajo los demás nodos, pero evita que se registren
+nuevos nodos y podría traer problemas.
+
+** Interactuando con los nodosEn el ejemplo de ~turtlesim~ se crearon 2 nodos. Un nodo es una
+instancia de ~turtlesim_node~ el cual es responsable de crear la
+ventana con la tortuga virtual y simular el movimiento de la
+tortuga. El segundo nodo es una instancia del programa
+~turtle_teleop_key~ y es responsable de leer el teclado y enviar los
+comandos de movimiento. Cada vez que se presiona alguna flecha
+direccional esto crea un mensaje con un comando de movimiento que es
+enviado al nodo ejecutando ~turtlesim_node~.
+
+Nota: Hacer diferencia entre el programa y su instancia es importante
+porque puede haber más de un nodo ejecutando una instancia del mismo
+programa, se debe tener cuidado de no causar colisiones de nombres.
+
+*** Iniciando nuevos nodos
+Para iniciar un nodo nuevo se utiliza el comando ~rosrun~ de la
+siguiente manera:
+#+BEGIN_SRC shell
+rosrun <nombre del paquete> <nombre del ejecutable>
+#+END_SRC
+
+~rosrun~ ocupa dos argumentos, el nombre del paquete y el nombre del
+ejecutable (el programa) que se desea correr. ~rosrun~ no tiene nada
+de especial además de entender la organización de los paquetes de ROS
+lo suficiente como para encontrar los ejecutables. Si se desea se
+podría correr los programas manualmente, como cualquier otro programa
+en el sistema. El trabajo de registrarse con el maestro es
+responsabilidad del programa y no de ~rosrun~.
+
+*** Inspeccionando los nodos
+Para listar todos los nodos que se encuentran corriendo ejecute:
+#+BEGIN_SRC shell
+rosnode list
+#+END_SRC
+
+En nuestro ejemplo, esto debería imprimir:
+#+BEGIN_SRC shell
+/rosout
+/turtlesim
+/teleop_turtle
+#+END_SRC
+
+Estos son los 3 nodos corriendo en nuestro sistema. El nodo ~/rosout~
+es un nodo especial del sistema que levanta el nodo maestro y su
+trabajo es similar a la /salida estándar/ en un programa normal.
+
+También, note que los nodos no tienen exactamente el mismo nombre que
+su programa ejecutable.
+
+Para conseguir información de un nodo particular:
+#+BEGIN_SRC shell
+rosnode info <nombre del nodo>
+#+END_SRC
+
+La salida incluye una lista de tópicos a los que el nodo pública y
+esta subscrito, los servicios ofrecidos por el nodo, el identificador
+de proceso de Linux (PID) y un resumen de las conexiones que ha hecho
+con otros nodos.
+
+*** Cerrando nodos
+Para cerrar un nodo se puede usar:
+#+BEGIN_SRC shell
+rosnode kill <nombre del nodo>
+#+END_SRC
+
+A diferencia de cerrar o reiniciar el nodo maestro, cerrar o reiniciar
+un nodo  común generalmente no tiene impacto en otros nodos, incluso
+para los nodos con los que se comunica, la comunicación se cierra
+cuando se cierra el nodo y se restablece cuando se reinicia el nodo.
+
+También se puede cerrar el nodo con =Ctrl-C= pero esto evita que el
+nodo se des-registre del maestro y se reporte en comandos como
+=rosnode list=  Para remover los nodos muertos de la lista se puede
+usar:
+#+BEGIN_SRC shell
+rosnode cleanup
+#+END_SRC
+** Interactuando con tópicos y mensajes
+Ahora se explorará como se comunican los nodos. En nuestro ejemplo el
+nodo de ~/teleop_turtle~ se comunica con el ~/turtlesim_node~. Se sabe
+que se hace por medio de publicaciones y subscripciones a un
+tópico. Una de las maneras más fáciles de visualizar como se comunica
+el sistema es mediante el siguiente comando:
+#+BEGIN_SRC shell
+rqt_graph
+#+END_SRC
+
+Esto nos muestra un diagrama de nodos y conexiones como se muestra a
+continuación:
+
+[[../resources/usage/rosqt.png]]
+
+Note que aquí no se muestra el nodo ~/rosout~, pero gracias a
+~rosnode list~ se sabe que existe. Esto es porque ~rosqt_graph~
+esconde algunos nodos, si le quitamos el check a la casilla llamada
+"Debug" veremos un diagrama como el siguiente:
+
+[[../resources/usage/rosqt_full.png]]
+
+Vemos que el nodo ~/teleop_turtle~ publica a un tópico llamado
+~/turtle/cmd_vel~, el nodo ~/turtle_sim~ esta subscrito a este tópico
+y recibe los mensajes que se publican.
+
+Dos aspectos interesantes:
+- ~rqt_graph~ es un nodo en si mismo
+- Todos los nodos publican a ~/rosout~, esta es una de las maneras en
+  la que los nodos generan mensajes con información para el usuario,
+  por ejemplo mensajes de texto para diagnosticar problemas.
+
+Note que ~/rosout~ es el nombre del nodo y de tópico. Esto esta
+permitido porque ROS siempre sabe por el contexto si se esta
+referenciando a un nodo o a un tópico.
+
+~rqt_graph~ tiene varias opciones para esconder y mostrar varios nodos
+y tópicos, se le recomienda al lector experimentar con ellas. Mucha de
+la información, como los nodos de debug, no es necesariamente útil y
+por eso se esconde por defecto. Otra información que se esconde son
+los tópicos que no tienen subscriptores o publicadores. Puede parecer
+raro que existan si no se están usando, pero para mantener el desacople
+entre nodos, estos escuchan todos sus tópicos aunque no haya nadie
+publicando y también publican en los tópicos relevantes, aunque no
+haya nadie escuchando.
+
+*** Inspeccionando tópicos
+Para listar todos los tópicos activos:
+#+BEGIN_SRC shell
+rostopic list
+#+END_SRC
+
+Lo cual resulta en la misma información de ~rosqt_graph~ cuando se
+muestra todo, pero a aveces es más conveniente tenerlo en forma
+textual.
+
+Se pueden ver cuales mensajes han sido publicados a un tópico con:
+#+BEGIN_SRC shell
+rostopic echo <nombre del tópico>
+#+END_SRC
+
+Por ejemplo:
+#+BEGIN_SRC shell
+rostopic echo /turtle1/cmd_vel
+#+END_SRC
+
+Muestra los mensajes mandados por ~/teleop_tutrle~ cuando se presiona
+una tecla.
+
+Se puede medir el ritmo con el que se publican mensajes y el ancho de
+banda que consume un tópico con los siguientes comandos
+respectivamente:
+#+BEGIN_SRC shell
+rostopic hz <nombre del topico>
+rostopic bw <nombre del topico>
+#+END_SRC
+
+Incluso si no se esta interesado en el valor per se a veces es útil
+para verificar que si se están publicando mensajes en intervalos
+regulares.
+
+Para inspeccionar más detalles de un tópico:
+#+BEGIN_SRC shell
+rostopic info <nombre del topico>
+#+END_SRC
+
+Por ejemplo:
+#+BEGIN_SRC shell
+rostopic info turtl1/color_sensor
+#+END_SRC
+
+Despliega información como quienes están subscritos, quienes publican,
+sus ips respectivos y el tipo de los mensajes transmitidos, El tipo es
+la parte más importante en este caso el tópico tiene tipo
+~turtlesim/Color~. Esto es importante porque el tipo de mensaje define
+los datos y la estructura de los mismos.
+
+*** Inspeccionando mensajes
+Para inspección la estructura del mensaje:
+#+BEGIN_SRC shell
+rosmsg show <nombre del tipo de mensaje>
+#+END_SRC
+
+En el caso de:
+
+#+BEGIN_SRC shell
+rosmsg show turtlesim/Color
+#+END_SRC
+
+muestra:
+#+BEGIN_SRC shell
+uint8 r
+uint8 g
+uint8 b
+#+END_SRC
+
+En un ejemplo ligeramente más complicado el tipo de mensaje usando
+para dirigir a la tortuga tiene tipo ~/geometry_msgs/Twist~:
+#+BEGIN_SRC shell
+
+rosmsg show /geometry_msgs/Twist
+
+geometry_msgs/Vector3 linear
+  float64 x
+  float64 y
+  float64 z
+geometry_msgs/Vector3 angular
+  float64 x
+  float64 y
+  float64 z
+#+END_SRC
+
+Ese mensaje tiene 2 campos compuestos =linear= y =angular= los cuales
+son arreglos de 3 campos de tipo ~float64~. ~rosmsg show~ indenta cada
+sub-campo en un campo compuesto y muestra todos los subcampos. Los
+tipos de los campos compuestos son tipos de mensaje también por lo que
+se puede definir tipos de mensajes en base a mensajes ya existentes.
+
+Se pueden enviar mensajes a un tópico desde la terminal usando el
+siguiente comando:
+#+BEGIN_SRC shell
+rostopic pub -r <frecuencia en hz> <nombre del tópico> <tipo de mensaje> <contenido del mensaje>
+#+END_SRC
+
+Este comando envía repetidamente el mensaje dado al tópico dado a la
+frecuencia dada. El último argumento ~<contenido del mensaje>~ debe de
+tener un valor para cada campo en el mensaje, por ejemplo:
+#+BEGIN_SRC shell
+rostopic pub -r 1 /turtle1/cmd_vel geometry_msgs/Teist '[2,0,0]' '[0,0,0]'
+#+END_SRC
+
+Los campos se asignan en el mismo orden en el que aparecen en ~rosmsg~
+y para agrupar cada sub-campo de un campo compuesto usamos comillas
+simples y braquetes. Pruebe enviándole diferentes mensajes a la
+tortuga. Note que ~turtlesim~ ignora algunas de las entradas del
+mensaje ya que describen movimiento que no es posible en un plano 2-D.
+
+Algunas notas adicionales de ~rostopic pub~:
+
+- Además de ~-r~ que envía datos periódicamente existe ~-1~ que envía
+  el mensaje 1 veces y el modo especial ~-l~ que publica el mensaje 1
+  vez, pero se asegura nuevos subscriptores al tópico también reciban
+  el mensaje.
+
+- También hay una opción ~-f~ que permite leer mensajes de un archivo,
+  en este caso los mensajes deben tener el mismo formato que la salida
+  de ~rostopic echo~.
+
+Al lector se le puede ocurrir usar una mezcla de ~rostopic echo~ y
+~rostopic pub~ par aguardar una seria de mensajes y repetirlos, para
+realizar pruebas. Hay una herramienta llamada ~rosbag~ que es una
+implementación más completa de este tipo de idea.
+
+Finalmente como todo en ROS, los mensajes pertenecen a un paquete en
+particular. Los nombres de los tipos de mensajes incluyen el nombre
+del paquete. Por ejemplo ~turtlesim/Color~ es el mensaje ~Color~ del
+paquete ~turtlesim~. Esto se hace principalmente para evitar
+colisiones de nombres.
+
+** Un ejemplo más complejo
+Cierre los nodos abiertos (menos el maestro) y ejecute los siguientes comandos en
+consolas diferentes:
+#+BEGIN_SRC shell
+
+rosrun turtlesim turtlesim_node __name:=A
+rosrun turtlesim turtlesim_node __name:=B
+rosrun turtlesim turtlesim turtle_teleop_key __name:=C
+rosrun turtlesim turtlesim turtle_teleop_key __name:=D
+#+END_SRC
+
+Esto es muy similar al ejemplo anterior, pero el argumento adicional
+~__name:=~ sirve para cambiar el nombre de los nodos, esto se hace
+para evitar colisiones de nombres.
+
+Ejecute ~rqt_graph~, observe como se ve el sistema. Presione teclas en
+los nodos de ~turtle_teleop_key~. Note que las dos tortugas reciben
+simultáneamente los mismos mensajes.
+
+Esto ejemplo muestra que la comunicación de los tópicos es,
+efectivamente, de muchos nodos a muchos nodos.
+
+** Revisando problemas
+
+Una última herramienta de linea de comandos:
+#+BEGIN_SRC shell
+roswtf
+#+END_SRC
+
+Es una herramienta que corre un gran número de revisiones y puede
+detectar muchos de los problemas comunes.
