@@ -1,0 +1,61 @@
+* rosbag
+~rosbag~ es la herramienta de ros para crear y reproducir mensajes en
+un sistema de ROS que corre. La información se va a acumular en un
+archivo .bag.
+
+Es mejor crear un directorio para guardar estos archivos:
+#+BEGIN_SRC shell
+mkdir ~/bagfiles
+#+END_SRC
+
+Ahora se inicia el turtlesim. Corra en una consolas diferente los
+cada uno de los siguientes comanodos:
+#+BEGIN_SRC shell
+roscore
+rosrun turtlesim turtlesim_node
+rosrun turtlesim turtle_teleop_key
+#+END_SRC
+
+Para grabar todos los mensajes del sistema los siguientes comandos en
+una terminal nueva:
+#+BEGIN_SRC shell
+rosbag record -a
+#+END_SRC
+
+la opción ~-a~ indica que grabe todos los mensajes en todos los
+tópicos. Si se desea puede especificar una lista de tópicos por grabar
+en lugar de usar la opción ~-a~.
+
+Ahora mueva la tortuga al rededor para guardar algunos datos. Cuando
+termine presiona =Ctrl-C= en la terminal en la que corre ~rosbag~.
+
+Para examinar los datos puede usar ~rosbag info~. Ejecute esto en el
+directorio donde guardo los datos:
+#+BEGIN_SRC shell
+rosbag info <nombre del archivo .bag>
+#+END_SRC
+
+Esto muestra información detallada como la duración, tamaño, el número
+de mensajes. los tópicos guardados y otros.
+
+Cierre el nodo que corre ~turtle_teleop_key~. Ahora podemos correr la
+repetición de los datos tomados:
+
+#+BEGIN_SRC shell
+rosbag play <nombre del archivo .bag>
+#+END_SRC
+
+Luego de un momento, la tortuga se empezará a mover con una
+trayectoria similar (pero no igual) a la que tenía cuando se grabó. La
+razón por la cual no es perfecto es porque ~turtlesim~ es muy sensible
+a pequeñas variaciones al tiempo de llegada de los mensajes, ~rosbag~
+tiene algunas limitaciones a la hora de grabar datos y los sistemas
+que son muy sensibles al tiempo pueden presentar pequeñas variaciones
+y el usuario no debería esperar una imitación perfecta.
+
+Hay dos opciones de interés para ~rosbag play~:
+- Para no iniciar desde el principio, sino desde un segundo
+  predeterminado se puede usar la opción ~-s~ seguido de el segundo
+  por el cual iniciar.
+- La opción ~-r~ permite alterar la frecuencia a la cual se publican
+  los mensajes.

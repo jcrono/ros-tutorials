@@ -308,6 +308,90 @@ del paquete. Por ejemplo ~turtlesim/Color~ es el mensaje ~Color~ del
 paquete ~turtlesim~. Esto se hace principalmente para evitar
 colisiones de nombres.
 
+** Interactuando con servicios
+Para interactuar con servicios desde la linea de comandos se usa
+~rosservice~:
+#+BEGIN_SRC shell
+rosservice list # lista los servicios activos
+rosservice call # permite llamar al servicio con los agrumentos dados
+rosservice type # Enseña el tipo del servicio
+rosservice find # Encuentra servicios basado en el tipo
+#+END_SRC
+
+si listamos los servicios:
+#+BEGIN_SRC shell
+rosservice list
+---
+/clear
+/kill
+/reset
+/rosout/get_loggers
+/rosout/set_logger_level
+/spawn
+/teleop_turtle/get_loggers
+/teleop_turtle/set_logger_level
+/turtle1/set_pen
+/turtle1/teleport_absolute
+/turtle1/teleport_relative
+/turtlesim/get_loggers
+/turtlesim/set_logger_level
+#+END_SRC
+
+Inspeccionemos el tipo de un servicio. Podemos usar el siguiente
+comando para listar los campos del tipo (y no solo su nombre)
+#+BEGIN_SRC shell
+# Si solo se quiere imprimir el nombre del tipo elmine todo despues del "|"
+rosservice type /spawn | rosserv show
+#+END_SRC
+Esto retorna:
+#+BEGIN_SRC shell
+float32 x
+float32 y
+float32 theta
+string name
+---
+string name
+#+END_SRC
+Este servicio crea una nueva tortuga en la ubicación y orientación
+dada, además recibe un nombre opcionalmente:
+#+BEGIN_SRC shell
+rosservice call /spawn 2 2 0.2 ""
+#+END_SRC
+
+El servicio retorna el nombre de la tortuga recién creada.
+
+** Interactuando con el servidor de parámetros
+Para interactuar con el servidor de parámetros se usa:
+#+BEGIN_SRC shell
+rosparam set # le asigna un valor al parametro
+rosparam get # devuelve el valor actual del parametro
+rosparam load # Carga parametros de un archivo
+rosparam dump # guarda parametros de un archivo
+rosparam delete # borra un parametro
+rosparam list # lista los parametros
+#+END_SRC
+
+Si listamos los parámetros:
+#+BEGIN_SRC shell
+rosparam list
+#+END_SRC
+
+Entre su salida observamos estos 3 parámetros:
+#+BEGIN_SRC shell
+/background_b
+/background_g
+/background_r
+#+END_SRC
+
+Estos parámetros control el color del fondo del turtlesim,
+cambiémoslo:
+#+BEGIN_SRC shell
+rosparam get /background_r
+rosparam set /background_r 150
+rosparam get /background_r
+#+END_SRC
+Podemos ver que el valor del parámetro cambió y además el color de
+fondo del turtlesim, tal como se esperaba.
 ** Un ejemplo más complejo
 Cierre los nodos abiertos (menos el maestro) y ejecute los siguientes comandos en
 consolas diferentes:

@@ -1,0 +1,32 @@
+* Escribiendo código en ROS
+En esta guía se explorará como escribir sus propios nodos de
+ROS. Para esto se va a utilizar ~rospy~ la biblioteca de ROS para
+escribir nodos en el lenguaje de programación /python/. ROS tiene 3
+bibliotecas para escribir nodos, una en C++, una en python y otra en
+lisp. De las tres la más sencilla de usar es la de python, por eso se
+escogió esa para ser utilizada.
+
+Primero se va a describir como crear tipos mensajes y servicios
+personalizados y luego se escribirán algunos nodos de ejemplo. No
+todas las aplicaciones requieren mensajes personalizados, ROS trae
+bastantes por defecto. Varios paquetes como ~std_msgs~ y
+~geometry_msgs~ Traen mensajes predefinidos para aplicaciones
+comunes. Por convención, los mensajes se guardan en un directorio
+~msg~ dentro del paquete.
+
+Para ver estos mensajes:
+#+BEGIN_SRC shell
+rosls std_msgs/msg
+rosls geometry/msg
+#+END_SRC
+
+Si se desea saber con más detalle el formato de los mensajes se pueden
+abrir en un editor de texto cualquiera.
+
+* Creando un srv y msg
+
+* Creando un nodo publicador
+
+* Creando un nodo subscriptor
+
+* Creando un servicio
