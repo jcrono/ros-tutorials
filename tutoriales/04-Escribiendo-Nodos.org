@@ -24,6 +24,152 @@ Si se desea saber con más detalle el formato de los mensajes se pueden
 abrir en un editor de texto cualquiera.
 
 * Creando un srv y msg
+- msg :: son archivos de texto  simple que contiene los campos del
+         mensaje.
+- srv :: es muy parecido a un ~msg~ pero contiene dos partes un
+         mensaje y una respuesta.
+
+Los campos de los mensajes puede ser alguno de los tipos básicos o
+otro mensaje, por ejemplo:
+#+BEGIN_SRC shell
+  Header header
+  string child_frame_id
+  geometry_msgs/PoseWithCovariance pose
+  geometry_msgs/TwistWithCovariance twist
+#+END_SRC
+
+Este mensaje además usa un tipo especial de ROS: ~header~, el cual
+tiene información del tiempo de publicación para coordinar la
+información.
+
+Los ~srv~ son casi igual, pero además del mensaje contiene una
+respuesta, la petición y la respuesta están separados por un '---':
+#+BEGIN_SRC shell
+int64 A
+int64 B
+---
+int64 Sum
+#+END_SRC
+En este caso el servicio recibe 2 número retorna 1 número llamado
+suma.
+
+** Creando un msg
+Ahora creemos un mensaje nuevo en el paquete que se hizo en un
+tutorial anterior:
+#+BEGIN_SRC shell
+roscd tutorial_principiante
+mkdir msg
+echo "int64 num" > msg/Num.msg # Crea Num.msg que contiene int64 num
+#+END_SRC
+
+Luego hay que asegurarse que catkin genere el código necesario para
+usar nuestro mensaje par ello debemos descomentar varias lineas en
+~package.xml~ y en el ~CMakeLists.txt~ del paquete.
+
+1. Encuentre y descomente las siguientes dos lineas
+   #+BEGIN_SRC xml
+     <build_depend>message_generation</build_depend>
+     <exec_depend>message_runtime</exec_depend>
+   #+END_SRC
+2. En el ~CMakeLists.txt~ encuentre las siguientes lineas y agregue
+   ~message_generation~ de manera que quede:
+   #+BEGIN_SRC shell
+     find_package(catkin REQUIRED COMPONENTS
+        roscpp
+        rospy
+        std_msgs
+        message_generation
+     )
+   #+END_SRC
+3. Hay que exportar la dependencia, en el ~CMakeLists.txt~, encuentre
+   la siguientes lineas y agregue ~message_runtime~  y descomente de manera que
+   quede:
+   #+BEGIN_SRC shell
+     catkin_package(
+     #  INCLUDE_DIRS include
+     #  LIBRARIES tutorial_principante
+       CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+     #  DEPENDS system_lib
+     )
+   #+END_SRC
+4. Encuentre el siguiente bloque:
+   #+BEGIN_SRC shell
+     # add_message_files(
+     #   FILES
+     #   Message1.msg
+     #   Message2.msg
+     # )
+   #+END_SRC
+   y modifíquelo de tal manera que quede:
+   #+BEGIN_SRC shell
+      add_message_files(
+       FILES
+       Num.msg
+     )
+   #+END_SRC
+   Si crea más mensajes también debe incluirlos aquí.
+5. Decomente:
+   #+BEGIN_SRC shell
+     # generate_messages(
+     #   DEPENDENCIES
+     #   std_msgs
+     # )
+   #+END_SRC
+   para que se vea así:
+   #+BEGIN_SRC shell
+      generate_messages(
+        DEPENDENCIES
+        std_msgs
+      )
+   #+END_SRC
+
+** Creando un srv
+   Así como los ~msg~ van en una carpeta ~msg~ los ~srv~ van en la
+   carpeta ~srv~, créela:
+#+BEGIN_SRC shell
+roscd tutorial_principiante
+mkdir srv
+#+END_SRC
+
+En vez de crear el mensaje lo copiaremos de otro paquete:
+#+BEGIN_SRC shell
+# roscopy se usa así:
+# roscopy <nombre del paquete> <archivo para copiar> <lugar donde poner la copia>
+roscp rospy_tutorials AddTwoInts.srv srv/AddTwoInts.srv
+#+END_SRC
+
+Además de las cosas que ya se descomentaron para el ~msg~ hay que
+modificar la linea siguiente en el ~CMakelists.txt~ del paquete:
+#+BEGIN_SRC shell
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
+#+END_SRC
+De tal manera que quede así:
+#+BEGIN_SRC shell
+ add_service_files(
+   FILES
+   AddTwoInts.srv
+ )
+#+END_SRC
+
+** rosmsg y rossrv
+Los comandos ~rosmsg~ y ~rossrv~ pueden ser usados para inspeccionar
+los ~msg~ y los ~srv~ respectivamente.
+#+BEGIN_SRC shell
+# Muestra los campos de los msg y srv que creamos
+rosmsg show tutorial_principanete/Num.msg
+rossrv show tutorial_principanete/AddTowInts
+#+END_SRC
+
+Finalmente hace falta recompilar nuestro paquete para genrar el código
+de los mensajes:
+#+BEGIN_SRC shell
+cd ~/catkin_ws
+catkin_make
+#+END_SRC
 
 * Creando un nodo publicador
 
