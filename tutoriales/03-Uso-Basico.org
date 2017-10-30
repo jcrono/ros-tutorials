@@ -52,7 +52,8 @@ seleccione la terminal correspondiente y presione =Ctrl-C=. Detener al
 maestro no se trae abajo los demás nodos, pero evita que se registren
 nuevos nodos y podría traer problemas.
 
-** Interactuando con los nodosEn el ejemplo de ~turtlesim~ se crearon 2 nodos. Un nodo es una
+** Interactuando con los nodos
+En el ejemplo de ~turtlesim~ se crearon 2 nodos. Un nodo es una
 instancia de ~turtlesim_node~ el cual es responsable de crear la
 ventana con la tortuga virtual y simular el movimiento de la
 tortuga. El segundo nodo es una instancia del programa
