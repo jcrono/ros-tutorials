@@ -1,0 +1,618 @@
+* Escribiendo código en ROS
+En esta guía se explorará como escribir sus propios nodos de ROS. Para
+esto se va a utilizar ~rospy~ la biblioteca de ROS para escribir nodos
+en el lenguaje de programación /python/. ROS tiene 3 bibliotecas para
+escribir nodos, una en C++, una en python y otra en lisp. De las tres
+la más sencilla de usar es la de python, por eso se escogió esa para
+ser utilizada. La documentación oficial completa de rospy esta
+disponible en [[http://docs.ros.org/api/rospy/html/][este link.]]
+
+Primero se va a describir como crear tipos mensajes y servicios
+personalizados y luego se escribirán algunos nodos de ejemplo. No
+todas las aplicaciones requieren mensajes personalizados, ROS trae
+bastantes por defecto. Varios paquetes como ~std_msgs~ y
+~geometry_msgs~ Traen mensajes predefinidos para aplicaciones
+comunes. Por convención, los mensajes se guardan en un directorio
+~msg~ dentro del paquete.
+
+Para ver estos mensajes:
+#+BEGIN_SRC shell
+rosls std_msgs/msg
+rosls geometry/msg
+#+END_SRC
+
+Si se desea saber con más detalle el formato de los mensajes se pueden
+abrir en un editor de texto cualquiera. O se puede:
+#+BEGIN_SRC shell
+  rosmsg show <nombre del tipo de mensaje>
+# ejemplo:
+rosmsg show std_msgs/String
+#+END_SRC
+
+* Creando un srv y msg
+- msg :: son archivos de texto  simple que contiene los campos del
+         mensaje.
+- srv :: es muy parecido a un ~msg~ pero contiene dos partes un
+         mensaje y una respuesta.
+
+Los campos de los mensajes puede ser alguno de los tipos básicos o
+otro mensaje, por ejemplo:
+#+BEGIN_SRC shell
+  Header header
+  string child_frame_id
+  geometry_msgs/PoseWithCovariance pose
+  geometry_msgs/TwistWithCovariance twist
+#+END_SRC
+
+Este mensaje además usa un tipo especial de ROS: ~header~, el cual
+tiene información del tiempo de publicación para coordinar la
+información.
+
+Los ~srv~ son casi igual, pero además del mensaje contiene una
+respuesta, la petición y la respuesta están separados por un '---':
+#+BEGIN_SRC shell
+int64 A
+int64 B
+---
+int64 Sum
+#+END_SRC
+En este caso el servicio recibe 2 número retorna 1 número llamado
+suma.
+
+** Creando un msg
+Ahora creemos un mensaje nuevo en el paquete que se hizo en un
+tutorial anterior:
+#+BEGIN_SRC shell
+roscd tutorial_principiante
+mkdir msg
+echo "int64 num" > msg/Num.msg # Crea Num.msg que contiene int64 num
+#+END_SRC
+
+Luego hay que asegurarse que catkin genere el código necesario para
+usar nuestro mensaje par ello debemos descomentar varias lineas en
+~package.xml~ y en el ~CMakeLists.txt~ del paquete.
+
+1. Encuentre y descomente las siguientes dos lineas
+   #+BEGIN_SRC xml
+     <build_depend>message_generation</build_depend>
+     <exec_depend>message_runtime</exec_depend>
+   #+END_SRC
+2. En el ~CMakeLists.txt~ encuentre las siguientes lineas y agregue
+   ~message_generation~ de manera que quede:
+   #+BEGIN_SRC shell
+     find_package(catkin REQUIRED COMPONENTS
+        roscpp
+        rospy
+        std_msgs
+        message_generation
+     )
+   #+END_SRC
+3. Hay que exportar la dependencia, en el ~CMakeLists.txt~, encuentre
+   la siguientes lineas y agregue ~message_runtime~  y descomente de manera que
+   quede:
+   #+BEGIN_SRC shell
+     catkin_package(
+     #  INCLUDE_DIRS include
+     #  LIBRARIES tutorial_principante
+       CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+     #  DEPENDS system_lib
+     )
+   #+END_SRC
+4. Encuentre el siguiente bloque:
+   #+BEGIN_SRC shell
+     # add_message_files(
+     #   FILES
+     #   Message1.msg
+     #   Message2.msg
+     # )
+   #+END_SRC
+   y modifíquelo de tal manera que quede:
+   #+BEGIN_SRC shell
+      add_message_files(
+       FILES
+       Num.msg
+     )
+   #+END_SRC
+   Si crea más mensajes también debe incluirlos aquí.
+5. Decomente:
+   #+BEGIN_SRC shell
+     # generate_messages(
+     #   DEPENDENCIES
+     #   std_msgs
+     # )
+   #+END_SRC
+   para que se vea así:
+   #+BEGIN_SRC shell
+      generate_messages(
+        DEPENDENCIES
+        std_msgs
+      )
+   #+END_SRC
+
+** Creando un srv
+   Así como los ~msg~ van en una carpeta ~msg~ los ~srv~ van en la
+   carpeta ~srv~, créela:
+#+BEGIN_SRC shell
+roscd tutorial_principiante
+mkdir srv
+#+END_SRC
+
+En vez de crear el mensaje lo copiaremos de otro paquete:
+#+BEGIN_SRC shell
+# roscopy se usa así:
+# roscopy <nombre del paquete> <archivo para copiar> <lugar donde poner la copia>
+roscp rospy_tutorials AddTwoInts.srv srv/AddTwoInts.srv
+#+END_SRC
+
+Además de las cosas que ya se descomentaron para el ~msg~ hay que
+modificar la linea siguiente en el ~CMakelists.txt~ del paquete:
+#+BEGIN_SRC shell
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
+#+END_SRC
+De tal manera que quede así:
+#+BEGIN_SRC shell
+ add_service_files(
+   FILES
+   AddTwoInts.srv
+ )
+#+END_SRC
+
+** rosmsg y rossrv
+Los comandos ~rosmsg~ y ~rossrv~ pueden ser usados para inspeccionar
+los ~msg~ y los ~srv~ respectivamente.
+#+BEGIN_SRC shell
+# Muestra los campos de los msg y srv que creamos
+rosmsg show tutorial_principanete/Num.msg
+rossrv show tutorial_principanete/AddTowInts
+#+END_SRC
+
+Finalmente hace falta recompilar nuestro paquete para genrar el código
+de los mensajes:
+#+BEGIN_SRC shell
+cd ~/catkin_ws
+catkin_make
+#+END_SRC
+
+* Creando nodos publicador/subscriptor
+Para esta parte haremos dos nodos simples, uno que publique a un
+tópico mensajes de texto simple y otro nodo que escuche esos mensajes.
+
+** Creando el nodo publicador
+Para esto usaremos uno de los ejemplos oficiales de ROS:
+#+BEGIN_SRC python
+#!/usr/bin/env python
+# Se eliminó la licencia para ser más breves.
+import rospy
+from std_msgs.msg import String
+
+def talker():
+    pub = rospy.Publisher('chatter', String, queue_size=10)
+    rospy.init_node('talker', anonymous=True)
+    rate = rospy.Rate(10) # 10hz
+    while not rospy.is_shutdown():
+        hello_str = "hello world %s" % rospy.get_time()
+        rospy.loginfo(hello_str)
+        pub.publish(hello_str)
+        rate.sleep()
+
+if __name__ == '__main__':
+    try:
+        talker()
+    except rospy.ROSInterruptException:
+        pass
+#+END_SRC
+*Nota:* Si se esta usando la VM de vagrant, el código esta disponible
+ en ~/vagrant/code/talker.py~.
+
+Pongámoslo en nuestro paquete del tutorial:
+#+BEGIN_SRC shell
+# carpeta para guardar nuestros scripts
+mkdir ~/catkin_ws/tutorial_principiante/scripts
+cp /vagrant/code/talker.py ~/catkin_ws/tutorial_principiante/scripts
+chmod +x ~/catkin_ws/tutorial_principiante/scripts/talker.py
+#+END_SRC
+
+Sino se esta usando también se puede bajar de internet usando:
+#+BEGIN_SRC shell
+cd ~/catkin_ws/tutorial_principiante/scripts
+wget https://raw.github.com/ros/ros_tutorials/kinetic-devel/rospy_tutorials/001_talker_listener/listener.py
+chmod +x ~/catkin_ws/tutorial_principiante/scripts
+#+END_SRC
+
+Ahora se explicará linea por linea que ocurre:
+#+BEGIN_SRC python
+#!/usr/bin/env python
+#+END_SRC
+Los comentarios en python se empiezan con ~#~, para efectos de python
+esto es un comentario, pero este es un comentario especial que le
+indica al sistema operativo que es un programa de python y que debería
+usar python para ejecutarlo.
+
+#+BEGIN_SRC python
+import rospy
+from std_msgs.msg import String
+#+END_SRC
+
+Esta sección importa bibliotecas de código para nuestro
+programa. ~rospy~ es la biblioteca de cliente de ROS con la cual se
+pueden hacer nodos nuevos. ~std_msgs.msg~ es el paquete ~std_msgs~,
+ROS pone los mensajes en bibliotecas de python que tienen el mismo
+nombre que los paquetes de ROS equivalentes. ~from std_msgs.msg import
+String~ importa el mensaje String del paquete de mensajes estándar.
+
+#+BEGIN_SRC python
+def talker():
+#+END_SRC
+
+Luego se define una función talker, la cual no toma argumentos.
+
+#+BEGIN_SRC python
+# Publisher(<nombre del tópico>, <nombre del tipo de mensaje>)
+pub = rospy.Publisher('chatter', String, queue_size=10)
+#+END_SRC
+Esto crea un nuevo publicador, este es un objeto de python que publica
+mensajes a un tópico, recibe varios parámetros, el primero es el nombre
+del tópico en el cual va a publicar, el tipo de mensaje que se va a
+publicar y además en este ejemplo se especifico el tamaño de la bandeja
+de salida, este es un lugar temporal para tener los mensajes en caso
+que el tópico no los pueda recibir de inmediato. Tamaño 0 significa
+que la es infinito es una mala idea porque puede llegar a utilizar
+todo el RAM de la computadora.
+
+#+BEGIN_SRC python
+rospy.init_node('talker', anonymous=True)
+#+END_SRC
+Esta linea crea un nodo nuevo, el primer parámetro es el nombre del
+nodo, el parámetro ~anonymous=True~ hace que ROS le agregue un número
+aleatorio al nombre del nodo para asegurar que sea único y poder
+levantar varios nodos del mismo tipo sin preocuparse.
+
+#+BEGIN_SRC python
+    rate = rospy.Rate(10) # 10hz
+#+END_SRC
+Esto crea un objeto que sirve para esperar un tiempo, se usa para no
+transmitir mensajes a un ritmo muy rápido.
+
+#+BEGIN_SRC python
+while not rospy.is_shutdown():
+#+END_SRC
+Esta linea revisa que no se haya solicitado parar el nodo, caso
+contrario detendrá la ejecución del programa.
+
+#+BEGIN_SRC python
+hello_str = "hello world %s" % rospy.get_time()
+rospy.loginfo(hello_str) #logs
+pub.publish(hello_str)
+rate.sleep()
+#+END_SRC
+Finalmente la función crea un mensaje con ~hello_world~ y el tiempo en
+el que se creo. Luego se pone en los logs con ~rospy.loginfo~ Esto
+hace que sea publicado al tópico ~/rosout~, además se agrega al
+archivo de log del nodo y lo imprime en la terminal en la que corre el
+nodo. Luego se usa el objeto ~rate~ creado anteriormente para esperar
+un momento antes de repetir el proceso.
+
+#+BEGIN_SRC python
+if __name__ == '__main__':
+    try:
+        talker()
+    except rospy.ROSInterruptException:
+        pass
+#+END_SRC
+esta parte solo se ejecuta si nuestro programa es ~__main__~, en lugar
+de ser importado como una biblioteca, por ejemplo. Se puede pensar en
+esta sección como que es equivalente a la función main en C o Java. Al
+ser invocado, nuestro script va a correr la función ~talker()~ el
+~try ... except~ funciona simplemente para ignorar el error
+~ROSInterruptException~. Esta excepción se levanta cuando Se apaga el
+nodo en medio ~sleep~.
+
+** Creando un nodo subscriptor
+Ahora se va construir el nodo que recibe lo que el nodo hecho en la
+sección anterior envía:
+#+BEGIN_SRC python
+#!/usr/bin/env python
+import rospy
+from std_msgs.msg import String
+
+def callback(data):
+    rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+
+def listener():
+    rospy.init_node('listener', anonymous=True)
+
+    rospy.Subscriber("chatter", String, callback)
+
+    rospy.spin()
+
+if __name__ == '__main__':
+    listener()
+
+#+END_SRC
+*Nota:* Si se esta usando la VM de vagrant, el código esta disponible
+ en ~/vagrant/code/talker.py~.
+
+Agréguelo al paquete del tutorial y no se olvide de hacerlo
+ejecutable:
+#+BEGIN_SRC python
+chmod +x ~/catkin_ws/tutorial_principiante/scripts/listener.py
+#+END_SRC
+
+Este programa es muy parecido al nodo publicador, con las siguientes
+diferencias:
+
+#+BEGIN_SRC python
+def callback(data):
+    rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+#+END_SRC
+Esta función es la que se ejecuta cuando se recibe un mensaje, tiene
+que aceptar los datos como argumento. En este caso simplemente usamos
+~rospy.loginfo~ para imprimir el mensaje en la consola, en ~/rosout~ y
+en el archivo de logs. Esto simplemente nos permite observar que de
+hecho se están recibiendo mensajes.
+
+#+BEGIN_SRC python
+rospy.Subscriber("chatter", String, callback)
+#+END_SRC
+Esto le dice al nodo que se suscriba al tópico ~chatter~, que va a
+recibir mensajes de tipo ~String~ y que debe ejecutar la función
+~callback~ cuando reciba mensajes por este tópico.
+
+#+BEGIN_SRC python
+rospy.spin()
+#+END_SRC
+Esta función simplemente hace que el nodo espere hasta que reciba un
+mensaje. Si no se pone, el nodo ejecutaría la función ~listener~ 1 vez
+y terminaría sin poder recibir más mensajes.
+
+** Probando los nodos
+Se ocupa compilar el paquete:
+#+BEGIN_SRC shell
+cd ~/catkin_ws/
+catkin_make
+#+END_SRC
+A pesar de que el código de python no se compila, esto compila las
+dependencias y mensajes de nuestro paquete.
+
+En 3 consolas diferentes ejecute:
+#+BEGIN_SRC shell
+roscore # Inicie el nodo maestro si no esta activo
+rosrun beginner_tutorials talker.py
+rosrun beginner_tutorials listener.py
+#+END_SRC
+
+Observe los nuevos nodos en acción!
+
+* Creando un servicio
+Ahora crearemos un nodo que brinde servicio para sumar 2 números
+enteros y otro nodo cliente que utilice este servicio.
+
+** Creando el nodo de servicio
+El código de nuestro nodo de servicio se ve así:
+#+BEGIN_SRC python
+#!/usr/bin/env python
+
+from beginner_tutorials.srv import *
+import rospy
+
+def handle_add_two_ints(req):
+    print "Returning [%s + %s = %s]"%(req.a, req.b, (req.a + req.b))
+    return AddTwoIntsResponse(req.a + req.b)
+
+def add_two_ints_server():
+    rospy.init_node('add_two_ints_server')
+    s = rospy.Service('add_two_ints', AddTwoInts, handle_add_two_ints)
+    print "Ready to add two ints."
+    rospy.spin()
+
+if __name__ == "__main__":
+    add_two_ints_server()
+#+END_SRC
+
+Guarde este código en un archivo llamado ~add_two_ints_server.py~.
+Recuerde hacerlo ejecutable:
+#+BEGIN_SRC shell
+chmod +x scripts/add_two_ints_server.py
+#+END_SRC
+
+El código de nuestro nodo de servicio es muy parecido al
+subscriptor. La función ~handle_add_two_ints~ es la función que se
+ejecuta cuando se recibe una petición de servicio, al igual que
+~callback~ tiene que recibir el mensaje correspondiente. Los campos
+del mensaje están disponibles como ~<Nombre del argumento>.<Nombre del
+parametro>~. En este caso la función retorna la suma de los dos
+números. La función del nodo subscriptor no necesita retornar nada
+porque, a diferencia del nodo del servicio, el nodo del cual recibe
+los mensajes no espera ninguna respuesta.
+
+La función ~rospy.Service~ crea un nuevo servicio, acepta como
+argumentos el nombre del servicio, el nombre del tipo de mensaje y la
+función que debe de llamar para manejar ese tipo de mensajes.
+
+Finalmente se llama a ~ros.spin~ para que espere hasta recibir
+mensajes.
+
+** Creando el nodo cliente
+El código del nodo cliente es el siguiente:
+#+BEGIN_SRC python
+#!/usr/bin/python
+import sys
+import rospy
+from beginner_tutorials.srv import *
+
+def add_two_ints_client(x, y):
+    rospy.wait_for_service('add_two_ints')
+    try:
+        add_two_ints = rospy.ServiceProxy('add_two_ints', AddTwoInts)
+        resp1 = add_two_ints(x, y)
+        return resp1.sum
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
+
+def usage():
+    return "%s [x y]"%sys.argv[0]
+
+if __name__ == "__main__":
+    if len(sys.argv) == 3:
+        x = int(sys.argv[1])
+        y = int(sys.argv[2])
+    else:
+        print usage()
+        sys.exit(1)
+    print "Requesting %s+%s"%(x, y)
+    print "%s + %s = %s"%(x, y, add_two_ints_client(x, y))
+#+END_SRC
+Guárdelo en ~add_two_ints_client.py~ y recuerde hacerlo ejecutable:
+#+BEGIN_SRC shell
+chmod +x add_two_ints_client.py
+#+END_SRC
+
+Este código es un poco diferente, así que expliquémoslo:
+#+BEGIN_SRC python
+rospy.wait_for_service('add_two_ints')
+#+END_SRC
+Esta función simplemente espera a que el servicio ~'add_two_ints'~
+este disponible, evita que intentemos usar un servicio antes de que el
+nodo que provee el servicio este listo.
+
+#+BEGIN_SRC python
+add_two_ints = rospy.ServiceProxy('add_two_ints', AddTwoInts)
+resp1 = add_two_ints(x, y)
+#+END_SRC
+
+La primera linea crea un objeto que es capaz de hablarle al nodo de
+servicio, como es usual ocupa el nombre del servicio y el nombre del
+tipo de mensaje como argumentos.
+
+La segunda linea le envía un mensaje al nodo servicio usando ~x, y~
+como argumentos, los valores de estas variables se obtienen del
+usuario en el main. La respuesta del servicio se gurda en la variable
+~resp1~.
+
+#+BEGIN_SRC python
+        return resp1.sum
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
+#+END_SRC
+Si el servicio contestó nuestro mensaje exitosamente, la función
+~add_two_int_client~ devuelva la suma que obtuvo del servicio. Si
+después de un rato no hubo respuesta, se asume que el servicio no va a
+contestar y se levanta un ~ServiceException~, lo cual hace que se
+imprima en la pantalla que nuestro intento de usar el servicio falló.
+
+#+BEGIN_SRC python
+if __name__ == "__main__":
+    if len(sys.argv) == 3:
+        x = int(sys.argv[1])
+        y = int(sys.argv[2])
+    else:
+        print usage()
+        sys.exit(1)
+    print "Requesting %s+%s"%(x, y)
+    print "%s + %s = %s"%(x, y, add_two_ints_client(x, y))
+#+END_SRC
+
+Finalmente lo que el main hace es que obtiene 2 números de la consola,
+usa el servicio he imprime a la terminal el resultado.
+
+** Probando el servicio
+Recuerde compilar el paquete:
+#+BEGIN_SRC shell
+cd ~/catkin_ws/
+catkin_make
+#+END_SRC
+
+Inicie el nodo maestro (si no esta corriendo) y el nodo que acabamos
+de crear:
+#+BEGIN_SRC shell
+roscore
+rosrun beginner_tutorials add_two_ints_server.py
+#+END_SRC
+
+Y finalmente el cliente para enviarle dos números al servicio:
+#+BEGIN_SRC shell
+rosrun beginner_tutorials add_two_ints_client.py 1 3
+#+END_SRC
+
+Pruebe con números distintos.
+
+* Utilizando al servidor de parámetros
+Para obtener valores al servidor de parámetros desde nuestros nodos se
+puede usar la siguiente función:
+#+BEGIN_SRC python
+# Obtener un parametro global
+rospy.get_param('/global_param_name')
+
+# Obtener un parametro del paquete
+rospy.get_param('param_name')
+
+# Obtener un parametro privado del nodo
+rospy.get_param('~private_param_name')
+#+END_SRC
+ROS hace la mayoría del trabajo para resolver el nombre del parámetro
+y en general hace lo correcto, incluso si el usuario cambia el nombre
+del parámetro a la hora de ejecutar los programas.
+
+También se puede asignar un valor por defecto si el parámetro no
+se encuentra en el servidor:
+#+BEGIN_SRC python
+rospy.get_param('foo', 'valor por defecto')
+#+END_SRC
+
+Adicionalmente se puede cambiar el valor de algún parámetro:
+#+BEGIN_SRC
+rospy.set_param('some_numbers', [1., 2., 3., 4.])
+rospy.set_param('truth', True)
+rospy.set_param('~private_bar', 1+2)
+#+END_SRC
+
+O borrar un parámetro
+#+BEGIN_SRC
+rospy.delete_param('param_name')
+#+END_SRC
+* Acerca de los logs
+Los logs son muy importantes para descifrar que ocurrió cuando algo
+sale mal.
+
+~rospy~ provee 5 funciones para logear información:
+#+BEGIN_SRC python
+rospy.logdebug(msg, *args)
+rospy.logwarn(msg, *args)
+rospy.loginfo(msg, *args)
+rospy.logerr(msg, *args)
+rospy.logfatal(msg, *args)
+#+END_SRC
+
+Las funciones determinar exactamente a dónde va terminar el mensaje:
+
+- debug :: Se usa para información que es útil cuando se esta
+           desarrollando el programa. Estos no se crean a menos que se
+           pidan explícitamente.
+- info :: Son mensajes pequeños que brindan información que puede ser
+          útil al usuario. Terminan en la consola donde se ejecuta el
+          nodo, en ~/rosout~ y en el archivo de logs. Todos los
+          niveles siguientes también terminan en ~/rosout~ y el
+          archivo de log del nodo.
+- warn :: Se usa para dar advertencias de eventos que el usuario puede
+          encontrar alarmantes pero que son esperadas como parte del
+          funcionamiento normal. Por ejemplo, cuando no se puede
+          cargar un archivo de configuración
+- error :: Se usan para indicar que algo serio pasó, pero el evento es
+           recuperable.
+- fatal :: Se usa para indicar cuando un evento serio que no se puede
+           recuperar ocurrió.
+
+ROS hace que los mensajes tengan un formato diferente según la
+gravedad de su nivel para que llamen más fácilmente la atención y así
+el usuario este informado del evento que ocurre y puede reaccionar
+acorde.
+
+Finalmente, para activar los mensaje de ~debug~ se le puede indicar
+al nodo cuando se crea:
+#+BEGIN_SRC python
+rospy.init_node('mi_nodo', log_level=rospy.DEBUG)
+#+END_SRC

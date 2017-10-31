@@ -1,0 +1,259 @@
+* Introducción
+En los últimos años, la comunidad de robótica a hecho avances
+impresionantes. Hardware de robot más barato y robusto esta siendo
+ampliamente usando en robots de plataforma móvil, a multi-copteros, a
+robots humanoides. También se han desarrollado algoritmos para darle a
+estos robots mayores grados de autonomía.
+
+A pesar de estos rápidos avances hacer software para robots, en
+espacial software de uso general (y agnóstico de cualquier robot), es
+/difícil/. Hay muchas razones por las cuales esta tarea es difícil,
+los robots varían mucho en su forma y hardware y están compuestos por
+muchas partes que interactúan entre sí. Además, tareas que son
+triviales para los humanos son complicadas para un robot, los
+ambientes humanos son altamente variantes y tratar con estas
+variaciones es complejo. ROS fue diseñado con la intención de ayudar a
+manejar algunos de estos retos.
+
+La [[http://wiki.ros.org/ROS/Introduction][descripción oficial de ROS]] es:
+
+/Ros es un meta-sistema operativo open-source para tu robot. Provee/
+/servicios que usualmente esperarías de un sistema operativo,/
+/incluyendo abstracción de hardware, control de dispositivos de bajo/
+/nivel, implementación de funcionalidad utilizada comúnmente, paso de/
+/mensajes entre procesos y manejo de paquetes. Además también provee/
+/herramientas y bibliotecas para obtener, compilar y escribir código/
+/que corre en varias computadoras./
+
+Un aspecto importante es que ROS sustituye, sino que complementa al
+sistema operativo tradicional. La descripción oficial puede dejar
+dudas de cuales son las ventajas reales, pues ROS es un sistema
+complejo y puede tomar mucho tiempo y energía aprenderlo. A
+continuación se presentan algunos ejemplos de problemas concretos que
+ROS ayuda a resolver.
+
+Por supuesto ninguna de estas soluciones ni ventajas es única de ROS y
+existen otras plataformas con capacidades similares. La ventaja más
+grande de ROS sobre estas plataformas es que ROS es la más popular y
+más ampliamente soportada por la comunidad de robótica.
+
+** Computación distribuida
+La computación distribuida es correr un programa o sistema
+computacional que corre en varias computadoras. Esto es un problema
+relevante porque los sistemas robóticos modernos son sistemas
+distribuidos:
+
+- Los robots suelen traer múltiples computadoras que controlan
+  subconjuntos de los sensores y actuadores del robot.
+
+- Incluso dentro de una misma computadora los programas suelen correr
+  como procesos independientes que ocupan cooperar.
+
+- Cuando múltiples robots intentan cooperar en tareas conjuntas
+  necesitan comunicarse para coordinar esfuerzos.
+
+- Los humanos frecuentemente le envían comandos al robot desde una
+  computadora o un dispositivo móvil. Los programas que mandan estos
+  comandos ocupan comunicarse con los robots y muchas veces pueden
+  considerarse parte del sistema.
+
+En todos estos casos, el problema común es que se necesita
+comunicación entre programas y procesos que no necesariamente existen
+en una misma computadora. ROS provee mecanismos relativamente simples
+para este tipo de comunicación los cuales serán explicados con un poco
+más de detalle en la sección de arquitectura de ROS.
+
+** Re-utilización de software
+Un problema común en la comunidad de robótica es que las
+implementaciones de los programas están ligadas directamente al
+hardware del robot. Esto a su vez causa que para cada robot particular
+sea necesario volver a re-implementar la funcionalidad. Implementar un
+algoritmo consume mucho tiempo y esfuerzo ya que se introducen errores
+en los programas y es necesario probar que cada nueva implementación
+sea correcta y además crea el problema que un arreglo en una
+implementación. ROS atiende este problema en al menos dos formas
+importantes:
+
+- ROS separa las partes que son dependientes del hardware y los
+  algoritmos para navegación, mapeo y otras funciones de alto nivel en
+  procesos separados.
+
+- ROS provee implementaciones estables, probadas y estándar de muchos
+  algoritmos importantes. Además al ser /open-source/ permite que
+  expertos en varios campos cooperen en implementaciones
+  comunes. También permite a los demás usuarios aprovechar el trabajo
+  hecho por estos expertos.
+
+Como resultados los usuarios pueden esperar que, una vez superada la
+curva de aprendizaje inicial, puedan utilizar el tiempo explorando
+ideas nuevas en lugar de estar re-inventando funcionalidad existentes.
+
+** Pruebas de software nuevo
+
+Otra de las formas en las que desarrollar software para robots es más
+difícil que desarrollar software para otros medios es que probar el
+funcionamiento de este software es lento y dado a errores. Es dado a
+errores porque existen muchas cosas que pueden salir mal además del
+software, por ejemplo tal vez lo que falla no es el programa sino el
+sensor, o el actuador o el sistema operativo... Es lento porque los
+robots no siempre están físicamente disponibles para trabajar (pueden
+estar sin batería, por ejemplo). ROS intenta resolver esto con dos
+funcionalidades:
+- Como se presento anteriormente, ROS separa el control de bajo nivel
+  del hardware de los procesos de alto nivel de procesamiento de datos
+  y toma de decisiones. Gracias a esta separación es posible
+  reemplazar los programas de bajo nivel (y su hardware
+  correspondiente) con un simulador. Esto permite probar el
+  comportamiento de las partes de alto nivel del sistema sin ocupar un
+  robot físico.
+- ROS provee un método de grabar y guardar los datos recolectados por
+  sensores y varios otros tipos de mensajes y posteriormente
+  reproducirlos. Esto facilita que cuando se opera al robot se pueda
+  aprovechar y grabar los datos de los sensores para que después se
+  puedan reproducir muchas veces y probar variaciones del escenario
+  usando los mismos datos sin necesidad de utilizar el robot físico.
+
+Un punto crucial de estas capacidades es que son transparentes, porque
+el robot real, la simulación y los datos grabados pueden proveer
+interfaces iguales o muy similares. El resto de software no necesita
+ser modificado de ninguna manera para que opere con estas 3 entradas y
+de hecho ni siquiera necesita "saber" si se esta comunicando con un
+robot real o algo más.
+
+* Arquitectura de ROS
+En esta sección se explorará la arquitectura de ROS. Esta sección
+es para explicar algunos conceptos básicos no entrará en gran
+detalle. Es posible que algunos de los conceptos no queden del todo
+claros y se le recomienda al lector ignorar esto y seguir
+adelante. Los conceptos se irán haciendo más claros conforme se
+utilice ROS. Además es recomendable volver a leer esta sección para
+repesar los conceptos conforme se vayan aplicando en el uso de ROS.
+
+A grandes rasgos, ROS es un sistema donde la funcionalidad es divida
+en un número de pedazos independientes que se comunican entre sí
+utilizando /mensajes/. Estos pedazos independientes se llaman /nodos/
+y generalmente corren en procesos a parte, cuando se inicializan los
+nodos, estos se registran con un /nodo maestro/ el cual esta encargado
+de llevar un registro de cuales nodos existen, que información proveen
+y como comunicarse con ellos. Los nodos publican mensajes en /tópicos/
+a los cuales otros nodos pueden subscribirse y recibir los mensajes
+publicados a ese tópico. Además de tópicos, los nodos pueden proveer
+un /servicio/, a donde los otros nodos pueden solicitar que se realice
+algún cálculo o alguna acción y recibir una respuesta con el resultado
+del servicio solicitado.
+
+Ahora se explicará cada concepto con más detalle.
+
+** Nodos
+Un nodo (node en inglés) es la unidad de computación básica en
+ROS. Los nodos usualmente hacen 1 tarea "simple" y son completamente
+independientes a los demás nodos. Los nodos se comunican con otros
+nodos mediante tópicos, servicios y el /servidor de parámetros/ (el
+cual sera explicado en la sección del nodo maestro). No puede haber 2
+nodos con el mismo nombre. Estos nodos simples se combinan de varias
+maneras para lograr realizar tareas complejas.
+
+Por ejemplo:
+  [[../resources/conceptos/nodos.png]]
+
+La idea de separar la funcionalidad en nodos es para darle al sistema
+tolerancia a fallas, ya que al ser completamente independiente entre
+sí un fallo en un nodo no causa un fallo en otro distinto. Esto
+contiene los fallos. Esto es una propiedad muy útil y muchas veces
+necesaria, por ejemplo en un carro autónomo es deseable que si hay un
+fallo en el radio del carro esto no cause que los frenos dejen de
+funcionar.
+
+La segunda ventaja de la arquitectura de nodos es que cada nodo puede
+desarrollarse y probarse de manera independiente, además simplifica el
+sistema haciendo que cada pieza de funcionalidad este aislada y solo
+se conectan por interfaces bien definidas. Por ejemplo, si el robot no
+reconoce objetos adecuadamente, hay un número de lugares bien
+definidos donde buscar errores: el nodo que recolecta los datos de la
+camera, el nodo que procesa las imágenes para buscar objetos, el nodo
+que va por cada objeto identificando que son... Esto permite que se
+pueda ir sistemáticamente por cada de uno de estos nodos, revisándolos
+uno por uno hasta encontrar el error.
+
+**  Mensajes
+Los nodos usan mensajes (messages en inglés) publicados en tópicos
+para comunicarse. Las peticiones y respuestas a de los servicios
+también usan mensajes. Un mensaje es una estructura de datos muy
+simple. Esta hecha de campos que tienen tipos y nombres. Los tipos
+estándares de C son soportados, así como arreglos de esos tipos. Para
+saber exactamente cuales tipos están soportados, consulte la
+[[http://wiki.ros.org/msg][documentación del formato de mensajes.]]
+
+Los mensajes en sí también tienen un tipo y además son versionados con
+un identificador único (MD5) basado en su  archivo =.msg= que los
+define.
+
+El formato de del archivo de mensajes consiste en campos con tipos y
+nombres separados por espacios:
+#+BEGIN_SRC c
+tipoDelCampo1 nombreDelCampo1
+tipoDelCampo2 nombreDelCampo2
+tipoDelCampo3 nombreDelCampo3
+...
+#+END_SRC
+
+Por ejemplo:
+#+BEGIN_SRC c
+string Nombre
+int32 x
+int32 y
+#+END_SRC
+
+** Nodo maestro
+El nodo maestro es un nodo especial en el sistema que tiene 3
+trabajos:
+
+1. Llevar un registro de todos los nodos disponibles en el sistema, y
+   en cuales tópicos publican, y/o están subscritos y cuales servicios proveen.
+
+
+2. Comunicar los nodos entre sí conforme sea necesario.
+
+
+3. Manejar el servidor de parámetros. El servidor de parámetros es un
+   lugar central donde guardar datos. Típicamente se usa para guardar
+   configuraciones de los nodos. Por ejemplo, como los nombres de los
+   nodos y tópicos deben ser únicos, en vez de usar nombres fijos, los nodos
+   pueden preguntar cual es nombre al servidor de parámetros y/o
+   cuales son los nombres de los tópicos en los que se publican alguna
+   información relevante.
+
+  [[../resources/conceptos/master.png]]
+
+** Tópicos
+Los tópicos (topics en inglés) son canales por los cuales se
+transmiten datos. Los tópicos transmiten datos sin conexiones directas
+entre nodos, es decir, el nodo que publica a un dato no tiene que
+tener información alguna de los nodos que están subscritos a ese
+tópico y reciben los mensajes que pública ni vise versa, incluso el
+nodo que publica los datos ni siquiera necesita saber si existe algún
+nodo que reciba los datos. Además los tópicos son comunicación de
+muchos a muchos; puede haber varios nodos que publican y están
+subscritos al mismo tópico.
+
+Los tópicos tienen tipo y son de tipado fuerte. Tipado fuerte es un
+concepto de informática que significa que solo los datos del mismo
+tipo pueden interactuar. El tipo de un tópico es igual al tipo de
+mensaje de ROS que se envía y recibe en ese tópico, y un nodo solo
+puede suscribirse a un tópico en el cual se publiquen el mismo tipo de
+mensajes que recibe el nodo. Es decir un nodo que reciba un mensaje
+que contiene datos de imágenes solo puede subscribirse a tópicos en
+los que se publiquen mensajes con datos de imágenes.
+
+Los tópicos pueden funcionar usando los siguientes protocolos de red:
+- TCP/IP
+- UDP
+
+** Servicios
+Los servicios (services en inglés) también son canales de
+comunicación, pero a diferencia de los tópicos no son unidireccionales
+y están menos desacoplados. Los nodos pueden solicitar una acción a un
+servicio y cuando la acción termina reciben una respuesta.
+
+Similarmente que los tópicos los servicios tienen tipos y lo que
+reciben y sus respuestas están completamente especificadas.
