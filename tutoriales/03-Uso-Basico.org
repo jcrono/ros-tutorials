@@ -277,7 +277,7 @@ Este comando envía repetidamente el mensaje dado al tópico dado a la
 frecuencia dada. El último argumento ~<contenido del mensaje>~ debe de
 tener un valor para cada campo en el mensaje, por ejemplo:
 #+BEGIN_SRC shell
-rostopic pub -r 1 /turtle1/cmd_vel geometry_msgs/Teist '[2,0,0]' '[0,0,0]'
+rostopic pub -r 1 /turtle1/cmd_vel geometry_msgs/Twist '[2,0,0]' '[0,0,0]'
 #+END_SRC
 
 Los campos se asignan en el mismo orden en el que aparecen en ~rosmsg~

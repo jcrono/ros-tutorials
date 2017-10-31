@@ -129,7 +129,7 @@ adelante. Los conceptos se irán haciendo más claros conforme se
 utilice ROS. Además es recomendable volver a leer esta sección para
 repesar los conceptos conforme se vayan aplicando en el uso de ROS.
 
-A grandes rázagos, ROS es un sistema donde la funcionalidad es divida
+A grandes rasgos, ROS es un sistema donde la funcionalidad es divida
 en un número de pedazos independientes que se comunican entre sí
 utilizando /mensajes/. Estos pedazos independientes se llaman /nodos/
 y generalmente corren en procesos a parte, cuando se inicializan los
