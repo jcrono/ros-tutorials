@@ -439,6 +439,7 @@ mensajes.
 ** Creando el nodo cliente
 El código del nodo cliente es el siguiente:
 #+BEGIN_SRC python
+#!/usr/bin/python
 import sys
 import rospy
 from beginner_tutorials.srv import *
@@ -464,6 +465,10 @@ if __name__ == "__main__":
         sys.exit(1)
     print "Requesting %s+%s"%(x, y)
     print "%s + %s = %s"%(x, y, add_two_ints_client(x, y))
+#+END_SRC
+Guárdelo en ~add_two_ints_client.py~ y recuerde hacerlo ejecutable:
+#+BEGIN_SRC shell
+chmod +x add_two_ints_client.py
 #+END_SRC
 
 Este código es un poco diferente, así que expliquémoslo:
