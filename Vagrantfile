@@ -97,6 +97,5 @@ Vagrant.configure("2") do |config|
      sudo rosdep init
      rosdep update
      sudo apt-get install -y gedit emacs vim xfce4-terminal
-     echo "source /opt/lunar/setup.bash" >> /home/ubuntu/.bashrc
    SHELL
 end
